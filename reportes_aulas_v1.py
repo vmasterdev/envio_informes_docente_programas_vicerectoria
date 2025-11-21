@@ -58,12 +58,51 @@ def wrap_for_pdf(html_inner: str) -> str:
   thead th,.thead-th th{{background:{BRAND["primary_dark"]}!important;color:#fff!important;}}
   table{{table-layout:fixed;border-collapse:collapse;}}
   td,th{{font-variant-numeric:tabular-nums;word-break:break-word;white-space:normal;}}
-  .badge-pill{{border-radius:999px;padding:4px 10px;font-weight:700;display:inline-block;font-size:12px;}}
-  .rev-chip{{display:inline-block;font-size:12px;border-radius:999px;padding:3px 10px;border:1px solid #d7dde9;line-height:1.2;white-space:normal;word-break:break-word;overflow-wrap:anywhere;}}
-  .rev-ok{{background:#e2f5e9;color:#1f6d3a;border-color:#cfead7;}}
-  .rev-muted{{background:{BRAND["muted_bg"]};color:{BRAND["muted_fg"]};}}
-  .rev-dot{{display:inline-block;width:8px;height:8px;border-radius:999px;margin-right:6px;background:#6c757d;vertical-align:middle;}}
-  .rev-dot-ok{{background:#1f6d3a;}}
+.badge-pill{{
+  border-radius:999px;
+  padding:4px 10px;
+  font-weight:700;
+  display:inline-block;
+  font-size:12px;
+  line-height:1.3;
+  min-width:72px;
+  text-align:center;
+}}
+
+
+  .rev-chip{{
+    display:inline-block;
+    font-size:12px;
+    border-radius:999px;
+    padding:4px 10px;
+    border:1px solid transparent;
+    white-space:normal;
+    word-break:break-word;
+    overflow-wrap:anywhere;
+  }}
+  .rev-ok{{
+    background:#e2f5e9;
+    color:#166534;
+    border-color:#bbf7d0;
+  }}
+  .rev-muted{{
+    background:#f3f4f6;
+    color:#374151;
+    border-color:#e5e7eb;
+  }}
+  .rev-dot{{
+    display:inline-block;
+    width:8px;
+    height:8px;
+    border-radius:999px;
+    margin-right:6px;
+    background:#6b7280;
+    vertical-align:middle;
+  }}
+  .rev-dot-ok{{
+    background:#16a34a;
+  }}
+
 </style></head><body>
 {html_inner}
 </body></html>"""
@@ -122,13 +161,17 @@ def final_qual(score):
     except Exception:
         x = 0.0
     if x >= 91:
-        return ("Desempeño excelente", "EXCELENTE", "#14532d", "#dcfce7")
+        # Excelente
+        return ("Desempeño excelente", "EXCELENTE", "#16a34a", "#dcfce7")
     elif x >= 80:
-        return ("Desempeño bueno", "BUENO", "#1d4ed8", "#dbeafe")
+        # Bueno
+        return ("Desempeño bueno", "BUENO", "#2563eb", "#dbeafe")
     elif x >= 70:
-        return ("Desempeño aceptable", "ACEPTABLE", "#92400e", "#ffedd5")
+        # Aceptable
+        return ("Desempeño aceptable", "ACEPTABLE", "#ea580c", "#ffedd5")
     else:
-        return ("Desempeño insatisfactorio", "INSATISFACTORIO", "#7f1d1d", "#fee2e2")
+        # Insatisfactorio
+        return ("Desempeño insatisfactorio", "INSATISFACTORIO", "#b91c1c", "#fee2e2")
 
 
 def leyenda_html_final():
@@ -139,23 +182,61 @@ def leyenda_html_final():
 def observacion_badge(texto: str) -> str:
     """
     Badge para la columna Revisión (Outlook-friendly).
+    Muestra "Muestreo: seleccionada" en verde claro y
+    "Muestreo: no seleccionada" en gris, con estilo pill
+    tanto en HTML como en PDF.
     """
     t = (texto or "").strip().upper().replace("MUESTRO", "MUESTREO")
     if not t:
         return "—"
+
+    # Normalización rápida por si viene como "REV ..."
     if t.startswith("REV"):
         t = "SELECCIONADA PARA EL MUESTREO"
+
     is_no = "NO SELECCIONADA" in t
     is_yes = ("SELECCIONADA" in t) and ("NO" not in t)
 
     if is_yes:
-        return (f"<span class='rev-chip rev-ok'>"
-                f"<span class='rev-dot rev-dot-ok'></span>Muestreo: seleccionada</span>")
+        # Verde claro – Muestreo seleccionada
+        return (
+            "<span class='rev-chip rev-ok' "
+            "style='display:inline-block;font-size:12px;border-radius:999px;"
+            "padding:4px 10px;border:1px solid #bbf7d0;background:#e2f5e9;"
+            "color:#166534;white-space:normal;word-break:break-word;"
+            "overflow-wrap:anywhere;'>"
+            "<span class='rev-dot rev-dot-ok' "
+            "style='display:inline-block;width:8px;height:8px;border-radius:999px;"
+            "margin-right:6px;background:#16a34a;vertical-align:middle;'></span>"
+            "Muestreo: seleccionada</span>"
+        )
+
     if is_no:
-        return (f"<span class='rev-chip rev-muted'>"
-                f"<span class='rev-dot'></span>Muestreo: no seleccionada</span>")
-    return (f"<span class='rev-chip rev-muted'>"
-            f"<span class='rev-dot'></span>{texto}</span>")
+        # Gris – Muestreo no seleccionada
+        return (
+            "<span class='rev-chip rev-muted' "
+            "style='display:inline-block;font-size:12px;border-radius:999px;"
+            "padding:4px 10px;border:1px solid #e5e7eb;background:#f3f4f6;"
+            "color:#374151;white-space:normal;word-break:break-word;"
+            "overflow-wrap:anywhere;'>"
+            "<span class='rev-dot' "
+            "style='display:inline-block;width:8px;height:8px;border-radius:999px;"
+            "margin-right:6px;background:#6b7280;vertical-align:middle;'></span>"
+            "Muestreo: no seleccionada</span>"
+        )
+
+    # Cualquier otro texto (por si pones algo manual)
+    return (
+        "<span class='rev-chip rev-muted' "
+        "style='display:inline-block;font-size:12px;border-radius:999px;"
+        "padding:4px 10px;border:1px solid #e5e7eb;background:#f3f4f6;"
+        "color:#374151;white-space:normal;word-break:break-word;"
+        "overflow-wrap:anywhere;'>"
+        "<span class='rev-dot' "
+        "style='display:inline-block;width:8px;height:8px;border-radius:999px;"
+        "margin-right:6px;background:#6b7280;vertical-align:middle;'></span>"
+        f"{texto}</span>"
+    )
 
 
 def normalize_dataframe(df: pd.DataFrame) -> pd.DataFrame:
@@ -207,15 +288,28 @@ def email_shell(title_html, body_html):
     )
     return f"""<div><span class="preheader">Informe final de seguimiento – Momento 2 (Alistamiento + Ejecución).</span></div>
 <table style="background:#f2f4f8;" border="0" width="100%" cellspacing="0" cellpadding="0">
-  <tr><td align="center" style="padding:28px 12px;">
-    <table width="720" style="max-width:720px;background:#ffffff;border-radius:12px;box-shadow:0 4px 12px rgba(0,0,0,.08);">
-      <tr><td style="background:{BRAND['accent']};height:8px;border-top-left-radius:12px;border-top-right-radius:12px;font-size:0;line-height:0;">&nbsp;</td></tr>
-      <tr><td style="background:{BRAND['primary']};color:#fff;padding:18px 24px;border-bottom:1px solid #002b55;font-family:Segoe UI,Arial;">
-        <div style="font-size:22px;font-weight:700;">{title_html}</div></td></tr>
-      <tr><td style="padding:18px 24px;font-family:Segoe UI,Arial;color:#222;font-size:15px;line-height:1.6;">
-        {header}{body_html}{footer_block()}</td></tr>
-    </table></td></tr></table>"""
-
+  <tr>
+    <td align="center" style="padding:28px 12px;">
+      <table width="980" style="width:100%;max-width:980px;background:#ffffff;border-radius:12px;box-shadow:0 4px 12px rgba(0,0,0,.08);">
+        <tr>
+          <td style="background:{BRAND['accent']};height:8px;border-top-left-radius:12px;border-top-right-radius:12px;font-size:0;line-height:0;">
+            &nbsp;
+          </td>
+        </tr>
+        <tr>
+          <td style="background:{BRAND['primary']};color:#fff;padding:18px 24px;border-bottom:1px solid #002b55;font-family:Segoe UI,Arial,sans-serif;">
+            <div style="font-size:22px;font-weight:700;">{title_html}</div>
+          </td>
+        </tr>
+        <tr>
+          <td style="padding:18px 24px;font-family:Segoe UI,Arial,sans-serif;color:#222;font-size:15px;line-height:1.6;">
+            {header}{body_html}{footer_block()}
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+</table>"""
 
 # ---------- DOCENTES ----------
 
@@ -303,123 +397,12 @@ def boton_agendar():
 
 
 def html_docente(nombre, docente_id, rows):
-    """
-    Informe por docente.
-    Incluye:
-      - Saludo y contexto
-      - KPIs de sus aulas
-      - Barra horizontal apilada (distribución excelente/bueno/aceptable/insatisfactorio)
-      - Tabla por NRC
-      - Mensaje final y botón para agendar
-    Estilo unificado con el informe global y el informe de programas.
-    """
-    # ---- KPIs y distribución para el docente ----
-    finals = [float(r.get("CALIFICACION FINAL", 0)) for r in rows]
-    total_aulas = len(finals)
-    promedio = round(sum(finals) / total_aulas, 2) if total_aulas else 0.0
-
-    cats = [final_qual(x)[1] for x in finals] if total_aulas else []
-    exc = cats.count("EXCELENTE")
-    bueno = cats.count("BUENO")
-    acept = cats.count("ACEPTABLE")
-    insat = cats.count("INSATISFACTORIO")
-
-    def _pct(n):
-        return round((n * 100.0) / total_aulas, 1) if total_aulas else 0.0
-
-    pct_exc = _pct(exc)
-    pct_bueno = _pct(bueno)
-    pct_acept = _pct(acept)
-    pct_insat = _pct(insat)
-
-    kpi_cards = f"""
-    <div style="display:flex;flex-wrap:wrap;gap:12px;margin:10px 0 8px 0;">
-      <div style="flex:1 1 160px;background:#ffffff;border:1px solid {BRAND['table_border']};border-radius:12px;padding:10px 12px;box-shadow:0 2px 6px rgba(0,0,0,.04);">
-        <div style="font-size:11px;color:#667;letter-spacing:.4px;text-transform:uppercase;">Aulas revisadas</div>
-        <div style="font-size:22px;font-weight:800;color:{BRAND['primary']};line-height:1.2;">{total_aulas}</div>
-      </div>
-      <div style="flex:1 1 160px;background:#ffffff;border:1px solid {BRAND['table_border']};border-radius:12px;padding:10px 12px;box-shadow:0 2px 6px rgba(0,0,0,.04);">
-        <div style="font-size:11px;color:#667;letter-spacing:.4px;text-transform:uppercase;">Promedio final</div>
-        <div style="font-size:22px;font-weight:800;color:{BRAND['primary']};line-height:1.2;">{promedio}</div>
-        <div style="font-size:11px;color:#667;">(0–100)</div>
-      </div>
-      <div style="flex:1 1 160px;background:#dcfce7;border:1px solid #cfead7;border-radius:12px;padding:10px 12px;box-shadow:0 2px 6px rgba(0,0,0,.04);">
-        <div style="font-size:11px;color:#14532d;letter-spacing:.4px;text-transform:uppercase;">Excelente / Bueno</div>
-        <div style="font-size:20px;font-weight:800;color:#14532d;line-height:1.2;">{exc + bueno}</div>
-        <div style="font-size:11px;color:#14532d;">{round(pct_exc + pct_bueno,1)}%</div>
-      </div>
-      <div style="flex:1 1 160px;background:#fee2e2;border:1px solid #f3c9cf;border-radius:12px;padding:10px 12px;box-shadow:0 2px 6px rgba(0,0,0,.04);">
-        <div style="font-size:11px;color:#7f1d1d;letter-spacing:.4px;text-transform:uppercase;">Acept./Insat.</div>
-        <div style="font-size:20px;font-weight:800;color:#7f1d1d;line-height:1.2;">{acept + insat}</div>
-        <div style="font-size:11px;color:#7f1d1d;">{round(pct_acept + pct_insat,1)}%</div>
-      </div>
-    </div>"""
-
-    # Barra horizontal apilada
-    if total_aulas > 0:
-        w_exc = exc * 100.0 / total_aulas
-        w_bueno = bueno * 100.0 / total_aulas
-        w_acept = acept * 100.0 / total_aulas
-        w_insat = max(0.0, 100.0 - (w_exc + w_bueno + w_acept))
-    else:
-        w_exc = w_bueno = w_acept = w_insat = 0.0
-
-    bar_html = f"""
-    <div style="position:relative;width:100%;height:18px;border-radius:9px;overflow:hidden;border:1px solid {BRAND['table_border']};background:#f9fafb;margin-top:4px;">
-      <div style="float:left;width:{w_exc:.4f}%;height:100%;background:#16a34a;"></div>
-      <div style="float:left;width:{w_bueno:.4f}%;height:100%;background:#2563eb;"></div>
-      <div style="float:left;width:{w_acept:.4f}%;height:100%;background:#ea580c;"></div>
-      <div style="float:left;width:{w_insat:.4f}%;height:100%;background:#b91c1c;"></div>
-      <div style="clear:both;"></div>
-    </div>
-    <div style="font-size:11px;color:#555;margin-top:3px;">
-      Excelente: {exc} ({pct_exc}%) ·
-      Bueno: {bueno} ({pct_bueno}%) ·
-      Aceptable: {acept} ({pct_acept}%) ·
-      Insatisf.: {insat} ({pct_insat}%)
-    </div>"""
-
-    legend = """
-    <div style="font-size:11px;color:#444;margin:4px 0 2px 0;">
-      <span style="display:inline-block;margin-right:10px;">
-        <span style="display:inline-block;width:10px;height:10px;border-radius:999px;background:#16a34a;margin-right:3px;"></span>
-        Excelente
-      </span>
-      <span style="display:inline-block;margin-right:10px;">
-        <span style="display:inline-block;width:10px;height:10px;border-radius:999px;background:#2563eb;margin-right:3px;"></span>
-        Bueno
-      </span>
-      <span style="display:inline-block;margin-right:10px;">
-        <span style="display:inline-block;width:10px;height:10px;border-radius:999px;background:#ea580c;margin-right:3px;"></span>
-        Aceptable
-      </span>
-      <span style="display:inline-block;margin-right:10px;">
-        <span style="display:inline-block;width:10px;height:10px;border-radius:999px;background:#b91c1c;margin-right:3px;"></span>
-        Insatisfactorio
-      </span>
-    </div>
-    """
-
-    resumen_block = f"""
-    <div style="margin:8px 0 14px 0;padding:14px 16px;background:#f8fafc;border-radius:12px;border:1px solid {BRAND['table_border']};">
-      <div style="font-size:13px;font-weight:600;color:{BRAND['primary_dark']};margin-bottom:4px;">
-        Resumen de desempeño de sus aulas (Momento 2)
-      </div>
-      {kpi_cards}
-      <div style="margin-top:6px;">
-        {legend}
-        {bar_html}
-      </div>
-    </div>
-    """
-
     body = (
         saludo_docente(nombre, docente_id) +
         "<p>Desde el <strong>Campus Virtual</strong> realizamos el seguimiento de sus aulas "
         "en dos fases: <strong>Alistamiento</strong> y <strong>Ejecución</strong>. "
         "A continuación encontrará el resumen final de cada aula (nota de alistamiento, nota de ejecución y calificación final).</p>"
-        + resumen_block +
-        tabla_docente(rows) +
+        + tabla_docente(rows) +
         "<div style='height:12px;'></div>" +
         bloque_mensaje_final_docente(rows) +
         "<p><strong>Contacto:</strong><br>"
@@ -432,15 +415,11 @@ def html_docente(nombre, docente_id, rows):
     )
     title = "Informe final de seguimiento – <span style='color:#f5b301;'>Campus Virtual RCS</span>"
     return email_shell(title, body)
+
+
+# ---------- PROGRAMAS: RESUMEN DOCENTES (final) ----------
+
 def html_programa_resumen(programa, df_prog, col_docente_nm, col_docente_id):
-    """
-    Informe por programa (correo a coordinador).
-    Incluye:
-      - KPIs del programa
-      - Una barra horizontal apilada (distribución excelente/bueno/aceptable/insatisfactorio)
-      - Tabla de docentes con nº de aulas y promedio final
-    Estilo unificado con el informe global y el informe de docentes.
-    """
     dfp = df_prog.copy()
     total_aulas = int(len(dfp))
     finals = dfp["CALIFICACION FINAL"].astype(float)
@@ -450,90 +429,12 @@ def html_programa_resumen(programa, df_prog, col_docente_nm, col_docente_id):
     def _cat(x):
         return final_qual(x)[1]
 
-    cats = finals.apply(_cat) if total_aulas else []
-    exc = int((cats == "EXCELENTE").sum()) if total_aulas else 0
-    bueno = int((cats == "BUENO").sum()) if total_aulas else 0
-    acept = int((cats == "ACEPTABLE").sum()) if total_aulas else 0
-    insat = int((cats == "INSATISFACTORIO").sum()) if total_aulas else 0
+    cats = finals.apply(_cat)
+    exc = int((cats == "EXCELENTE").sum())
+    bueno = int((cats == "BUENO").sum())
+    acept = int((cats == "ACEPTABLE").sum())
+    insat = int((cats == "INSATISFACTORIO").sum())
 
-    def _pct(n):
-        return round((n * 100.0) / total_aulas, 1) if total_aulas else 0.0
-
-    pct_exc = _pct(exc)
-    pct_bueno = _pct(bueno)
-    pct_acept = _pct(acept)
-    pct_insat = _pct(insat)
-
-    # ---- KPIs estilo informe global ----
-    kpi_cards = f"""
-    <div style="display:flex;flex-wrap:wrap;gap:12px;margin:8px 0 10px 0;">
-      <div style="flex:1 1 180px;background:#ffffff;border:1px solid {BRAND['table_border']};border-radius:12px;padding:10px 12px;box-shadow:0 2px 6px rgba(0,0,0,.04);">
-        <div style="font-size:11px;color:#667;letter-spacing:.4px;text-transform:uppercase;">Aulas del programa</div>
-        <div style="font-size:22px;font-weight:800;color:{BRAND['primary']};line-height:1.2;">{total_aulas}</div>
-      </div>
-      <div style="flex:1 1 180px;background:#ffffff;border:1px solid {BRAND['table_border']};border-radius:12px;padding:10px 12px;box-shadow:0 2px 6px rgba(0,0,0,.04);">
-        <div style="font-size:11px;color:#667;letter-spacing:.4px;text-transform:uppercase;">Promedio final</div>
-        <div style="font-size:22px;font-weight:800;color:{BRAND['primary']};line-height:1.2;">{promedio}</div>
-        <div style="font-size:11px;color:#667;">(0–100)</div>
-      </div>
-      <div style="flex:1 1 180px;background:#dcfce7;border:1px solid #cfead7;border-radius:12px;padding:10px 12px;box-shadow:0 2px 6px rgba(0,0,0,.04);">
-        <div style="font-size:11px;color:#14532d;letter-spacing:.4px;text-transform:uppercase;">Excelente / Bueno</div>
-        <div style="font-size:20px;font-weight:800;color:#14532d;line-height:1.2;">{exc + bueno}</div>
-        <div style="font-size:11px;color:#14532d;">{round(pct_exc + pct_bueno,1)}%</div>
-      </div>
-      <div style="flex:1 1 180px;background:#fee2e2;border:1px solid #f3c9cf;border-radius:12px;padding:10px 12px;box-shadow:0 2px 6px rgba(0,0,0,.04);">
-        <div style="font-size:11px;color:#7f1d1d;letter-spacing:.4px;text-transform:uppercase;">Acept./Insat.</div>
-        <div style="font-size:20px;font-weight:800;color:#7f1d1d;line-height:1.2;">{acept + insat}</div>
-        <div style="font-size:11px;color:#7f1d1d;">{round(pct_acept + pct_insat,1)}%</div>
-      </div>
-    </div>"""
-
-    # ---- Barra horizontal apilada (solo este programa) ----
-    if total_aulas > 0:
-        w_exc = exc * 100.0 / total_aulas
-        w_bueno = bueno * 100.0 / total_aulas
-        w_acept = acept * 100.0 / total_aulas
-        w_insat = max(0.0, 100.0 - (w_exc + w_bueno + w_acept))
-    else:
-        w_exc = w_bueno = w_acept = w_insat = 0.0
-
-    bar_html = f"""
-    <div style="position:relative;width:100%;height:18px;border-radius:9px;overflow:hidden;border:1px solid {BRAND['table_border']};background:#f9fafb;margin-top:4px;">
-      <div style="float:left;width:{w_exc:.4f}%;height:100%;background:#16a34a;"></div>
-      <div style="float:left;width:{w_bueno:.4f}%;height:100%;background:#2563eb;"></div>
-      <div style="float:left;width:{w_acept:.4f}%;height:100%;background:#ea580c;"></div>
-      <div style="float:left;width:{w_insat:.4f}%;height:100%;background:#b91c1c;"></div>
-      <div style="clear:both;"></div>
-    </div>
-    <div style="font-size:11px;color:#555;margin-top:3px;">
-      Excelente: {exc} ({pct_exc}%) ·
-      Bueno: {bueno} ({pct_bueno}%) ·
-      Aceptable: {acept} ({pct_acept}%) ·
-      Insatisf.: {insat} ({pct_insat}%)
-    </div>"""
-
-    legend = """
-    <div style="font-size:11px;color:#444;margin:4px 0 2px 0;">
-      <span style="display:inline-block;margin-right:10px;">
-        <span style="display:inline-block;width:10px;height:10px;border-radius:999px;background:#16a34a;margin-right:3px;"></span>
-        Excelente
-      </span>
-      <span style="display:inline-block;margin-right:10px;">
-        <span style="display:inline-block;width:10px;height:10px;border-radius:999px;background:#2563eb;margin-right:3px;"></span>
-        Bueno
-      </span>
-      <span style="display:inline-block;margin-right:10px;">
-        <span style="display:inline-block;width:10px;height:10px;border-radius:999px;background:#ea580c;margin-right:3px;"></span>
-        Aceptable
-      </span>
-      <span style="display:inline-block;margin-right:10px;">
-        <span style="display:inline-block;width:10px;height:10px;border-radius:999px;background:#b91c1c;margin-right:3px;"></span>
-        Insatisfactorio
-      </span>
-    </div>
-    """
-
-    # ---- Tabla de docentes (nº aulas y promedio) ----
     docentes = []
     for docente_id_val, gdoc in dfp.groupby(col_docente_id):
         nombre = next((str(x).strip() for x in gdoc[col_docente_nm].dropna().unique() if str(x).strip()), "")
@@ -570,49 +471,46 @@ def html_programa_resumen(programa, df_prog, col_docente_nm, col_docente_id):
 </tr>""")
     html_tabla = "".join(filas)
 
-    tabla_html = f"""
-    <table width="100%" cellspacing="0" cellpadding="0" border="0" style="border-collapse:collapse;border-radius:8px;overflow:hidden;font-family:Segoe UI,Arial;table-layout:fixed;border:1px solid {BRAND['table_border']};margin-top:12px;">
-      <thead class="thead-th">
-        <tr style="background:{BRAND['primary_dark']};color:#fff;">
-          <th style="padding:10px 12px;text-align:left;color:#fff!important;width:44%;">Docente</th>
-          <th style="padding:10px 12px;text-align:center;color:#fff!important;width:18%;">ID</th>
-          <th style="padding:10px 12px;text-align:center;color:#fff!important;width:18%;">Nº de aulas</th>
-          <th style="padding:10px 12px;text-align:center;color:#fff!important;width:20%;">Promedio final</th>
-        </tr>
-      </thead>
-      <tbody>{html_tabla}</tbody>
-    </table>
-    <div style="color:#667;margin-top:8px;font-size:12px;">
-      {leyenda_html_final()}.<br>
-      <em>El PDF adjunto contiene el detalle por NRC (Alistamiento y Ejecución) de cada aula.</em>
-    </div>
-    """
-
     shell = f"""
 <p style="margin:0 0 6px 0;"><strong>Programa:</strong> {programa}</p>
-<p style="margin:0 0 8px 0;">
-  Este informe presenta el <strong>resultado final del Momento 2</strong> (Alistamiento + Ejecución)
-  para las aulas del programa. A continuación se resumen los indicadores generales
-  y el desempeño promedio por docente.
+<p style="margin:0 0 12px 0;">
+  <strong>Resumen general (calificación final):</strong><br>
+  Aulas: {total_aulas} &nbsp;·&nbsp;
+  Promedio final: {promedio}<br>
+  Excelente: {exc} &nbsp;·&nbsp; Bueno: {bueno} &nbsp;·&nbsp;
+  Aceptable: {acept} &nbsp;·&nbsp; Insatisfactorio: {insat}
 </p>
-<div style="margin:8px 0 12px 0;padding:14px 16px;background:#f8fafc;border-radius:12px;border:1px solid {BRAND['table_border']};">
-  {kpi_cards}
-  <div style="margin-top:6px;">
-    <div style="font-size:13px;font-weight:600;color:{BRAND['primary_dark']};margin-bottom:2px;">
-      Distribución del desempeño final de las aulas del programa
-    </div>
-    {legend}
-    {bar_html}
-  </div>
-</div>
-{tabla_html}
+<table width="100%" cellspacing="0" cellpadding="0" border="0" style="border-collapse:collapse;border-radius:8px;overflow:hidden;font-family:Segoe UI,Arial;table-layout:fixed;border:1px solid {BRAND['table_border']}">
+  <thead class="thead-th">
+    <tr style="background:{BRAND['primary_dark']};color:#fff;">
+      <th style="padding:10px 12px;text-align:left;color:#fff!important;width:44%;">Docente</th>
+      <th style="padding:10px 12px;text-align:center;color:#fff!important;width:18%;">ID</th>
+      <th style="padding:10px 12px;text-align:center;color:#fff!important;width:18%;">Nº de aulas</th>
+      <th style="padding:10px 12px;text-align:center;color:#fff!important;width:20%;">Promedio final</th>
+    </tr>
+  </thead>
+  <tbody>{html_tabla}</tbody>
+</table>
+<div style="color:#667;margin-top:10px;font-size:12px;">*(El PDF adjunto contiene el detalle por NRC, organizado por docente. Informe final de Momento 2: Alistamiento + Ejecución.)*</div>
 """
     title = f"Informe final – Programa <span style='color:#FFD000;'>{programa}</span>"
     return email_shell(title, shell)
+
+
+# ---------- PROGRAMAS: DETALLE (por NRC, final) ----------
+
 def html_programa_detalle_global(programa, df_prog, col_docente_nm, col_docente_id):
+    """
+    Detalle por programa (para coordinadores) con tabla por docente y NRC.
+    Esta versión alinea correctamente las columnas "Desempeño" y "Revisión"
+    y usa pills redondeados compatibles con HTML y PDF.
+    """
     bloques = []
     for docente_id_val, gdoc in df_prog.groupby(col_docente_id):
-        nombre = next((str(x).strip() for x in gdoc[col_docente_nm].dropna().unique() if str(x).strip()), "")
+        nombre = next(
+            (str(x).strip() for x in gdoc[col_docente_nm].dropna().unique() if str(x).strip()),
+            ""
+        )
         nombre = nombre or f"ID {to_int_or_str(docente_id_val)}"
 
         filas = []
@@ -631,51 +529,51 @@ def html_programa_detalle_global(programa, df_prog, col_docente_nm, col_docente_
             filas.append(f"""
             <tr style="background:{BRAND['zebra'][0]};font-size:13px;">
               <td style="padding:10px;width:14%;text-align:center;">{r.get('NRC','')}</td>
-              <td style="padding:10px;width:50%;text-align:left;word-break:break-word;white-space:normal;overflow-wrap:anywhere;">{r.get('ASIGNATURA','')}</td>
-              <td style="padding:10px;width:18%;text-align:left;font-size:12px;line-height:1.4;">{puntajes_html}</td>
-              <td style="padding:10px;width:10%;text-align:center;">
-                <span style="display:inline-block;padding:4px 10px;border-radius:999px;background:{fg};color:#fff;font-size:12px;font-weight:600;" class="badge-pill">
+              <td style="padding:10px;width:45%;text-align:left;word-break:break-word;white-space:normal;overflow-wrap:anywhere;">
+                {r.get('ASIGNATURA','')}
+              </td>
+              <td style="padding:10px;width:18%;text-align:left;font-size:12px;line-height:1.4;">
+                {puntajes_html}
+              </td>
+              <td style="padding:10px;width:11%;text-align:center;white-space:nowrap;">
+                <span class="badge-pill"
+                      style="background:{fg};color:#fff;border-radius:999px;padding:4px 10px;
+                             font-size:12px;font-weight:700;display:inline-block;min-width:90px;">
                   {short.title()}
                 </span>
               </td>
-              <td style="padding:10px;width:14%;text-align:left;white-space:normal;word-break:break-word;overflow-wrap:anywhere;line-height:1.35;">{rev}</td>
+              <td style="padding:10px;width:12%;text-align:left;font-size:12px;line-height:1.35;">
+                {rev}
+              </td>
             </tr>""")
 
         tabla = f"""
-        <table width="100%" style="border-collapse:collapse;font-family:Segoe UI,Arial,sans-serif;font-size:13px;border:1px solid #d9e0ef;table-layout:fixed;">
+        <table width="100%" style="border-collapse:collapse;font-family:Segoe UI,Arial,sans-serif;
+                                   font-size:13px;border:1px solid {BRAND['table_border']};table-layout:fixed;">
           <thead class="thead-th">
             <tr style="background:{BRAND['primary_dark']};color:#fff;">
               <th style="padding:10px;text-align:center;width:14%;color:#fff!important;">NRC</th>
-              <th style="padding:10px;text-align:left;width:50%;color:#fff!important;">Asignatura</th>
+              <th style="padding:10px;text-align:left;width:45%;color:#fff!important;">Asignatura</th>
               <th style="padding:10px;text-align:left;width:18%;color:#fff!important;">Puntajes (Fase 1 y 2)</th>
-              <th style="padding:10px;text-align:center;width:10%;color:#fff!important;">Desempeño</th>
-              <th style="padding:10px;text-align:center;width:14%;color:#fff!important;">Revisión</th>
+              <th style="padding:10px;text-align:center;width:11%;color:#fff!important;">Desempeño</th>
+              <th style="padding:10px;text-align:left;width:12%;color:#fff!important;">Revisión</th>
             </tr>
           </thead>
           <tbody>{''.join(filas)}</tbody>
         </table>"""
 
         bloque = f"""
-        <div style="margin:18px 0;padding:10px 14px;background:#fefefe;border:1px solid {BRAND['table_border']};border-left:6px solid {BRAND['accent']};border-radius:10px;">
+        <div style="margin:18px 0;padding:10px 14px;background:#f8fafc;border-left:6px solid {BRAND['accent']};
+                    border-radius:10px;">
           <div style="font-size:15px;color:{BRAND['primary_dark']};font-weight:700;margin-bottom:6px;">
-            {nombre} <span style="font-weight:400;color:#667;">(ID: {to_int_or_str(docente_id_val)})</span>
+            {nombre} (ID: {to_int_or_str(docente_id_val)})
           </div>
           {tabla}
         </div>"""
+
         bloques.append(bloque)
 
-    wrapper = f"""
-<div style="font-family:Segoe UI, Arial, sans-serif;max-width:860px;margin:0 auto;">
-  <div style="background:{BRAND['primary']};color:#fff;padding:16px 20px;border-radius:10px 10px 0 0;border:1px solid #002b55;">
-    <div style="font-size:20px;font-weight:700;">Detalle final por NRC – Programa <span style="color:#FFD000;">{programa}</span></div>
-    <div style="font-size:12px;font-weight:400;margin-top:6px;color:#e6eaf2;">Momento 2 – Informe final (Alistamiento + Ejecución).</div>
-  </div>
-  <div style="border:1px solid {BRAND['table_border']};border-top:none;border-radius:0 0 10px 10px;padding:20px;background:{BRAND['panel_bg']};">
-    {''.join(bloques)}
-    <div style="margin-top:10px;color:#555;font-size:12px;text-align:right;">{leyenda_html_final()}</div>
-  </div>
-</div>"""
-    return wrapper
+    return "\n".join(bloques)
 
 
 def html_programa_detalle_mail(programa, df_prog, col_docente_nm, col_docente_id):
@@ -750,12 +648,14 @@ def build_overall_totals(df, col_puntaje_final):
         "pct_insat": pct(insat),
     }
 
+
 def html_global_program_bars(df, col_prog, col_puntaje_final):
     """
     Bloque de barras horizontales apiladas (100%) por programa académico.
     Cada barra muestra la distribución de aulas en:
     Excelente, Bueno, Aceptable e Insatisfactorio.
-    Se usa el mismo criterio de desempeño que en el resto del informe.
+    Esta versión evita problemas de redondeo calculando el último tramo (rojo)
+    como el resto hasta el 100%.
     """
     stats = build_program_stats(df, col_prog, col_puntaje_final)
 
@@ -770,44 +670,83 @@ def html_global_program_bars(df, col_prog, col_puntaje_final):
         acept = st["acept"]
         insat = st["insat"]
 
-        # porcentajes (por si quieres mostrarlos luego)
-        pct_exc = round(exc * 100 / total, 1)
-        pct_bueno = round(bueno * 100 / total, 1)
-        pct_acept = round(acept * 100 / total, 1)
-        pct_insat = round(insat * 100 / total, 1)
+        # Porcentajes para MOSTRAR en el texto
+        pct_exc_lbl = round(exc * 100.0 / total, 1)
+        pct_bueno_lbl = round(bueno * 100.0 / total, 1)
+        pct_acept_lbl = round(acept * 100.0 / total, 1)
+        pct_insat_lbl = round(insat * 100.0 / total, 1)
+
+        # Anchos de las barras: el último tramo (rojo) es el resto hasta 100%
+        if total <= 0:
+            w_exc = w_bueno = w_acept = w_insat = 0.0
+        else:
+            w_exc = exc * 100.0 / total
+            w_bueno = bueno * 100.0 / total
+            w_acept = acept * 100.0 / total
+            # resto hasta el 100% para evitar que quede en 0 por redondeos
+            w_insat = max(0.0, 100.0 - (w_exc + w_bueno + w_acept))
+
+        bar_html = f"""
+        <div style="position:relative;width:100%;height:18px;border-radius:9px;overflow:hidden;border:1px solid {BRAND['table_border']};background:#f9fafb;">
+          <div style="float:left;width:{w_exc:.4f}%;height:100%;background:#16a34a;"></div>
+          <div style="float:left;width:{w_bueno:.4f}%;height:100%;background:#2563eb;"></div>
+          <div style="float:left;width:{w_acept:.4f}%;height:100%;background:#ea580c;"></div>
+          <div style="float:left;width:{w_insat:.4f}%;height:100%;background:#b91c1c;"></div>
+          <div style="clear:both;"></div>
+        </div>
+        """
 
         filas.append(f"""
-        <div style="display:flex;align-items:center;margin:6px 0;">
-          <div style="width:30%;min-width:170px;padding-right:10px;font-size:13px;color:{BRAND['primary_dark']};font-weight:600;word-break:break-word;">
+        <div style="display:table;width:100%;margin:6px 0;">
+          <div style="display:table-cell;width:32%;min-width:190px;padding-right:12px;vertical-align:middle;color:{BRAND['primary_dark']};font-weight:600;word-break:break-word;">
             {st['programa']}<br>
             <span style="font-size:11px;color:#667;font-weight:400;">
               Aulas: {total} · Prom: {st['promedio']}
             </span>
           </div>
-          <div style="flex:1;display:flex;flex-direction:column;gap:4px;">
-            <div style="display:flex;height:18px;border-radius:999px;overflow:hidden;border:1px solid {BRAND['table_border']};background:#f9fafb;">
-              <div style="flex:{exc};background:#16a34a;font-size:0;"></div>
-              <div style="flex:{bueno};background:#2563eb;font-size:0;"></div>
-              <div style="flex:{acept};background:#ea580c;font-size:0;"></div>
-              <div style="flex:{insat};background:#b91c1c;font-size:0;"></div>
-            </div>
-            <div style="font-size:11px;color:#555;">
-              Excelente: {exc} ({pct_exc}%) ·
-              Bueno: {bueno} ({pct_bueno}%) ·
-              Aceptable: {acept} ({pct_acept}%) ·
-              Insatisf.: {insat} ({pct_insat}%)
+          <div style="display:table-cell;vertical-align:middle;">
+            {bar_html}
+            <div style="font-size:11px;color:#555;margin-top:3px;">
+              Excelente: {exc} ({pct_exc_lbl}%) ·
+              Bueno: {bueno} ({pct_bueno_lbl}%) ·
+              Aceptable: {acept} ({pct_acept_lbl}%) ·
+              Insatisf.: {insat} ({pct_insat_lbl}%)
             </div>
           </div>
-        </div>""")
+        </div>
+        """)
 
     if not filas:
         return ""
 
+    # Leyenda de colores arriba del gráfico
+    legend = """
+    <div style="font-size:11px;color:#444;margin:4px 0 6px 0;">
+      <span style="display:inline-block;margin-right:10px;">
+        <span style="display:inline-block;width:12px;height:12px;border-radius:999px;background:#16a34a;margin-right:4px;"></span>
+        Excelente
+      </span>
+      <span style="display:inline-block;margin-right:10px;">
+        <span style="display:inline-block;width:12px;height:12px;border-radius:999px;background:#2563eb;margin-right:4px;"></span>
+        Bueno
+      </span>
+      <span style="display:inline-block;margin-right:10px;">
+        <span style="display:inline-block;width:12px;height:12px;border-radius:999px;background:#ea580c;margin-right:4px;"></span>
+        Aceptable
+      </span>
+      <span style="display:inline-block;margin-right:10px;">
+        <span style="display:inline-block;width:12px;height:12px;border-radius:999px;background:#b91c1c;margin-right:4px;"></span>
+        Insatisfactorio
+      </span>
+    </div>
+    """
+
     return f"""
     <div style="margin:8px 0 16px 0;">
-      <div style="font-size:15px;font-weight:600;color:{BRAND['primary_dark']};margin-bottom:8px;">
+      <div style="font-size:15px;font-weight:600;color:{BRAND['primary_dark']};margin-bottom:4px;">
         Desempeño por programa académico
       </div>
+      {legend}
       <div>
         {''.join(filas)}
       </div>
@@ -816,6 +755,7 @@ def html_global_program_bars(df, col_prog, col_puntaje_final):
         (excelente, bueno, aceptable e insatisfactorio) según la calificación final.
       </div>
     </div>"""
+
 
 def html_global_summary_table(df, col_prog, col_puntaje_final):
     stats = build_program_stats(df, col_prog, col_puntaje_final)
@@ -845,7 +785,7 @@ def html_global_summary_table(df, col_prog, col_puntaje_final):
       </div>
     </div>"""
 
-    # 🔹 NUEVA: gráfica horizontal por programas, debajo de los KPI
+    # Gráfica horizontal por programas
     bars_block = html_global_program_bars(df, col_prog, col_puntaje_final)
 
     filas = []
