@@ -4,6 +4,7 @@ from pathlib import Path
 from datetime import datetime, date
 import pandas as pd
 import re
+import sys
 
 BRAND = {
     "primary": "#003366",
@@ -21,10 +22,66 @@ BRAND = {
 }
 
 FECHA_ETQ = date.today().strftime("%Y-%m-%d")
+FASE_ALISTAMIENTO = "alistamiento"
+FASE_EJECUCION = "ejecucion"
+FASE_TOTAL = "total"
 
-SUBJECT_DOCENTE   = f"Informe final – M2 (Alistamiento + Ejecución) – {{DOCENTE_LBL}} – {FECHA_ETQ}"
-SUBJECT_PROGRAMA  = f"Informe final – M2 (Alistamiento + Ejecución) – {{PROGRAMA}} – {FECHA_ETQ}"
-SUBJECT_GLOBAL    = f"Informe Global – M2 (Alistamiento + Ejecución) – Rectoría Centro Sur – {FECHA_ETQ}"
+
+def fase_label(fase: str) -> str:
+    mapping = {
+        FASE_ALISTAMIENTO: "Alistamiento",
+        FASE_EJECUCION: "Ejecución",
+        FASE_TOTAL: "Total",
+    }
+    return mapping.get(fase, "Total")
+
+
+def fase_descripcion(fase: str) -> str:
+    if fase == FASE_ALISTAMIENTO:
+        return ("Este informe corresponde a la fase de <strong>Alistamiento (Momento 2)</strong>, "
+                "que evalúa la preparación y configuración inicial del aula.")
+    if fase == FASE_EJECUCION:
+        return ("Este informe corresponde a la fase de <strong>Ejecución (Momento 2)</strong>, "
+                "que revisa la implementación y desarrollo de la experiencia formativa.")
+    return ("Este informe corresponde al <strong>resultado final (Alistamiento + Ejecución)</strong> "
+            "del Momento 2, integrando ambas fases en una calificación global.")
+
+
+def fase_preheader(fase: str) -> str:
+    if fase == FASE_ALISTAMIENTO:
+        return "Informe de Alistamiento – Momento 2"
+    if fase == FASE_EJECUCION:
+        return "Informe de Ejecución – Momento 2"
+    return "Informe final de seguimiento – Momento 2 (Alistamiento + Ejecución)"
+
+
+def subject_docente(fase: str, docente_lbl: str) -> str:
+    return (f"[Momento 2 – {fase_label(fase)}] Informe de seguimiento de aulas – "
+            f"{docente_lbl} – {FECHA_ETQ}")
+
+
+def subject_programa(fase: str, programa: str) -> str:
+    return (f"[Momento 2 – {fase_label(fase)}] Informe por programa – "
+            f"{programa} – {FECHA_ETQ}")
+
+
+def subject_global(fase: str) -> str:
+    return (f"[Momento 2 – {fase_label(fase)}] Informe global de aulas – Rectoría Centro Sur – "
+            f"{FECHA_ETQ}")
+
+
+def get_nota_fase(row, fase: str):
+    """
+    Devuelve la nota de una fila según la fase:
+    - 'alistamiento': columna CALIFICACION (fase 1).
+    - 'ejecucion': columna CALIFICACION 2 (fase 2).
+    - 'total': calificación final combinada.
+    """
+    if fase == FASE_ALISTAMIENTO:
+        return row.get("CALIFICACION", 0)
+    if fase == FASE_EJECUCION:
+        return row.get("CALIFICACION 2", 0)
+    return row.get("CALIFICACION FINAL", 0)
 
 BOOKING_URL = ("https://outlook.office.com/bookwithme/user/"
                "56cf01a4fb97453195dc6e912f82b2a5@uniminuto.edu/meetingtype/OLZ8ynZ2zkCBBRiqMRB-aQ2"
@@ -194,18 +251,14 @@ def footer_block():
     return f"<div style='margin-top:14px;font-size:12px;color:#666;text-align:right;'>Generado el {FECHA_ETQ} – Rectoría Centro Sur</div>"
 
 
-def email_shell(title_html, body_html):
+def email_shell(title_html, body_html, fase):
     header = (
         "<div style='font-size:12px;color:#445;line-height:1.6;margin:0 0 10px 0;'>"
-        "<em>Este informe corresponde al "
-        "<strong>seguimiento final de sus aulas (Momento 2)</strong>, "
-        "integrando la <strong>Fase de Alistamiento (50%)</strong> y la "
-        "<strong>Fase de Ejecución (50%)</strong>. "
-        "La calificación final se interpreta cualitativamente "
-        "en niveles de desempeño (excelente, bueno, aceptable e insatisfactorio).</em>"
+        f"<em>{fase_descripcion(fase)}</em>"
         "</div>"
     )
-    return f"""<div><span class="preheader">Informe final de seguimiento – Momento 2 (Alistamiento + Ejecución).</span></div>
+    preheader = fase_preheader(fase)
+    return f"""<div><span class="preheader">{preheader}.</span></div>
 <table style="background:#f2f4f8;" border="0" width="100%" cellspacing="0" cellpadding="0">
   <tr><td align="center" style="padding:28px 12px;">
     <table width="720" style="max-width:720px;background:#ffffff;border-radius:12px;box-shadow:0 4px 12px rgba(0,0,0,.08);">
@@ -219,13 +272,14 @@ def email_shell(title_html, body_html):
 
 # ---------- DOCENTES ----------
 
-def tabla_docente(rows):
+def tabla_docente(rows, fase):
     body_rows = []
     for r in rows:
         fase1 = r.get("CALIFICACION", 0)
         fase2 = r.get("CALIFICACION 2", 0)
         final = r.get("CALIFICACION FINAL", 0)
-        desc, short, fg, bg = final_qual(final)
+        nota_fase = r.get("PUNTAJE_FASE", final)
+        desc, short, fg, bg = final_qual(nota_fase)
         puntajes_html = (
             f"Alistamiento: {to_int_or_str(fase1)}<br>"
             f"Ejecución: {to_int_or_str(fase2)}<br>"
@@ -249,7 +303,7 @@ def tabla_docente(rows):
 
     inner = f"""
     <table style="background:#fbfbfe;border:1px solid #e3e8f1;border-left:5px solid {BRAND['accent']};border-radius:8px;" width="100%">
-      <tr><td style="padding:14px 18px;color:{BRAND['primary']};font-size:15px;font-weight:600;font-family:Segoe UI,Arial;">Resumen final de aulas revisadas (Alistamiento + Ejecución)</td></tr>
+      <tr><td style="padding:14px 18px;color:{BRAND['primary']};font-size:15px;font-weight:600;font-family:Segoe UI,Arial;">Resumen de aulas revisadas – Fase: {fase_label(fase)} (Momento 2)</td></tr>
       <tr><td style="padding:0 18px 16px 18px;">
         <table width="100%" style="border-collapse:collapse;table-layout:fixed;font-family:Segoe UI,Arial;font-size:14px;border:1px solid {BRAND['table_border']};">
           <thead class="thead-th">
@@ -276,19 +330,18 @@ def saludo_docente(nombre, docente_id):
     return f"<p><strong>Cordial saludo, {nombre_lbl}{id_lbl},</strong></p>"
 
 
-def bloque_mensaje_final_docente(rows):
-    finals = [float(r.get("CALIFICACION FINAL", 0)) for r in rows]
-    if not finals:
+def bloque_mensaje_final_docente(rows, fase):
+    puntajes = [float(r.get("PUNTAJE_FASE", r.get("CALIFICACION FINAL", 0))) for r in rows]
+    if not puntajes:
         return ""
-    prom_final = sum(finals) / len(finals)
+    prom_final = sum(puntajes) / len(puntajes)
     desc, short, fg, bg = final_qual(prom_final)
 
     return (
-        f"<p>El promedio final de sus aulas (Alistamiento + Ejecución) es "
+        f"<p>El promedio de sus aulas para la fase de {fase_label(fase)} es "
         f"<strong>{round(prom_final,1)}</strong>, con un "
         f"<span style='background:{bg};color:{fg};padding:3px 9px;border-radius:999px;font-weight:600;font-size:12px;'>{desc}</span>.</p>"
-        "<p>Recuerde que esta nota integra los dos momentos de seguimiento sobre la calidad del aula. "
-        "Si desea revisar en detalle algún caso puntual o recibir retroalimentación personalizada, "
+        "<p>Si desea revisar en detalle algún caso puntual o recibir retroalimentación personalizada, "
         "puede agendar un espacio conmigo.</p>"
     )
 
@@ -302,7 +355,7 @@ def boton_agendar():
             f"📅 Agendar llamada / videollamada</a></div>")
 
 
-def html_docente(nombre, docente_id, rows):
+def html_docente(nombre, docente_id, rows, fase):
     """
     Informe por docente.
     Incluye:
@@ -314,11 +367,11 @@ def html_docente(nombre, docente_id, rows):
     Estilo unificado con el informe global y el informe de programas.
     """
     # ---- KPIs y distribución para el docente ----
-    finals = [float(r.get("CALIFICACION FINAL", 0)) for r in rows]
-    total_aulas = len(finals)
-    promedio = round(sum(finals) / total_aulas, 2) if total_aulas else 0.0
+    puntajes_fase = [float(r.get("PUNTAJE_FASE", r.get("CALIFICACION FINAL", 0))) for r in rows]
+    total_aulas = len(puntajes_fase)
+    promedio = round(sum(puntajes_fase) / total_aulas, 2) if total_aulas else 0.0
 
-    cats = [final_qual(x)[1] for x in finals] if total_aulas else []
+    cats = [final_qual(x)[1] for x in puntajes_fase] if total_aulas else []
     exc = cats.count("EXCELENTE")
     bueno = cats.count("BUENO")
     acept = cats.count("ACEPTABLE")
@@ -339,7 +392,7 @@ def html_docente(nombre, docente_id, rows):
         <div style="font-size:22px;font-weight:800;color:{BRAND['primary']};line-height:1.2;">{total_aulas}</div>
       </div>
       <div style="flex:1 1 160px;background:#ffffff;border:1px solid {BRAND['table_border']};border-radius:12px;padding:10px 12px;box-shadow:0 2px 6px rgba(0,0,0,.04);">
-        <div style="font-size:11px;color:#667;letter-spacing:.4px;text-transform:uppercase;">Promedio final</div>
+        <div style="font-size:11px;color:#667;letter-spacing:.4px;text-transform:uppercase;">Promedio {fase_label(fase).lower()}</div>
         <div style="font-size:22px;font-weight:800;color:{BRAND['primary']};line-height:1.2;">{promedio}</div>
         <div style="font-size:11px;color:#667;">(0–100)</div>
       </div>
@@ -412,7 +465,7 @@ def html_docente(nombre, docente_id, rows):
     resumen_block = f"""
     <div style="margin:8px 0 14px 0;padding:14px 16px;background:#f8fafc;border-radius:12px;border:1px solid {BRAND['table_border']};">
       <div style="font-size:13px;font-weight:600;color:{BRAND['primary_dark']};margin-bottom:4px;">
-        Resumen de desempeño de sus aulas (Momento 2)
+        Resumen de desempeño de sus aulas – {fase_label(fase)} (Momento 2)
       </div>
       {kpi_cards}
       <div style="margin-top:6px;">
@@ -422,15 +475,18 @@ def html_docente(nombre, docente_id, rows):
     </div>
     """
 
+    fase_msg = f"<p>{fase_descripcion(fase)}</p>"
     body = (
         saludo_docente(nombre, docente_id) +
+        fase_msg +
         "<p>Desde el <strong>Campus Virtual</strong> realizamos el seguimiento de sus aulas "
         "en dos fases: <strong>Alistamiento</strong> y <strong>Ejecución</strong>. "
-        "A continuación encontrará el resumen final de cada aula (nota de alistamiento, nota de ejecución y calificación final).</p>"
+        "Aunque este reporte se centra en la fase seleccionada, la tabla incluye las tres notas "
+        "(alistamiento, ejecución y calificación final) para su contexto.</p>"
         + resumen_block +
-        tabla_docente(rows) +
+        tabla_docente(rows, fase) +
         "<div style='height:12px;'></div>" +
-        bloque_mensaje_final_docente(rows) +
+        bloque_mensaje_final_docente(rows, fase) +
         "<p><strong>Contacto:</strong><br>"
         "Profesional de Campus Virtual: Jaime Duván Lozano Ardila<br>"
         "Correo: <a href='mailto:jaime.lozano.a@uniminuto.edu' style='color:#003366;text-decoration:underline;'>jaime.lozano.a@uniminuto.edu</a><br>"
@@ -439,9 +495,9 @@ def html_docente(nombre, docente_id, rows):
         "<div style='height:18px;'></div>"
         "<div style='text-align:center;color:#333;font-size:14px;'>Campus Virtual – Rectoría Centro Sur</div>"
     )
-    title = "Informe final de seguimiento – <span style='color:#f5b301;'>Campus Virtual RCS</span>"
-    return email_shell(title, body)
-def html_programa_resumen(programa, df_prog, col_docente_nm, col_docente_id):
+    title = f"Informe de {fase_label(fase)} – <span style='color:#f5b301;'>Campus Virtual RCS</span>"
+    return email_shell(title, body, fase)
+def html_programa_resumen(programa, df_prog, col_docente_nm, col_docente_id, col_puntaje_final, fase):
     """
     Informe por programa (correo a coordinador).
     Incluye:
@@ -452,7 +508,7 @@ def html_programa_resumen(programa, df_prog, col_docente_nm, col_docente_id):
     """
     dfp = df_prog.copy()
     total_aulas = int(len(dfp))
-    finals = dfp["CALIFICACION FINAL"].astype(float)
+    finals = dfp[col_puntaje_final].astype(float)
     promedio = round(float(finals.mean()), 2) if total_aulas > 0 else 0.0
 
     # Distribución por desempeño
@@ -556,7 +612,7 @@ def html_programa_resumen(programa, df_prog, col_docente_nm, col_docente_id):
     for docente_id_val, gdoc in dfp.groupby(col_docente_id):
         nombre = next((str(x).strip() for x in gdoc[col_docente_nm].dropna().unique() if str(x).strip()), "")
         nombre = nombre or f"ID {to_int_or_str(docente_id_val)}"
-        finals_doc = gdoc["CALIFICACION FINAL"].astype(float)
+        finals_doc = gdoc[col_puntaje_final].astype(float)
         prom_doc = round(float(finals_doc.mean()), 2) if len(gdoc) > 0 else 0.0
         docentes.append({
             "id": docente_id_val,
@@ -595,7 +651,7 @@ def html_programa_resumen(programa, df_prog, col_docente_nm, col_docente_id):
           <th style="padding:10px 12px;text-align:left;color:#fff!important;width:44%;">Docente</th>
           <th style="padding:10px 12px;text-align:center;color:#fff!important;width:18%;">ID</th>
           <th style="padding:10px 12px;text-align:center;color:#fff!important;width:18%;">Nº de aulas</th>
-          <th style="padding:10px 12px;text-align:center;color:#fff!important;width:20%;">Promedio final</th>
+          <th style="padding:10px 12px;text-align:center;color:#fff!important;width:20%;">Promedio {fase_label(fase).lower()}</th>
         </tr>
       </thead>
       <tbody>{html_tabla}</tbody>
@@ -609,15 +665,14 @@ def html_programa_resumen(programa, df_prog, col_docente_nm, col_docente_id):
     shell = f"""
 <p style="margin:0 0 6px 0;"><strong>Programa:</strong> {programa}</p>
 <p style="margin:0 0 8px 0;">
-  Este informe presenta el <strong>resultado final del Momento 2</strong> (Alistamiento + Ejecución)
-  para las aulas del programa. A continuación se resumen los indicadores generales
+  {fase_descripcion(fase)} A continuación se resumen los indicadores generales
   y el desempeño promedio por docente.
 </p>
 <div style="margin:8px 0 12px 0;padding:14px 16px;background:#f8fafc;border-radius:12px;border:1px solid {BRAND['table_border']};">
   {kpi_cards}
   <div style="margin-top:6px;">
     <div style="font-size:13px;font-weight:600;color:{BRAND['primary_dark']};margin-bottom:2px;">
-      Distribución del desempeño final de las aulas del programa
+      Distribución del desempeño de las aulas del programa – {fase_label(fase)}
     </div>
     {legend}
     {bar_html}
@@ -625,9 +680,9 @@ def html_programa_resumen(programa, df_prog, col_docente_nm, col_docente_id):
 </div>
 {tabla_html}
 """
-    title = f"Informe final – Programa <span style='color:#FFD000;'>{programa}</span>"
-    return email_shell(title, shell)
-def html_programa_detalle_global(programa, df_prog, col_docente_nm, col_docente_id):
+    title = f"Informe de {fase_label(fase)} – Programa <span style='color:#FFD000;'>{programa}</span>"
+    return email_shell(title, shell, fase)
+def html_programa_detalle_global(programa, df_prog, col_docente_nm, col_docente_id, col_puntaje_final, fase):
     bloques = []
     for docente_id_val, gdoc in df_prog.groupby(col_docente_id):
         nombre = next((str(x).strip() for x in gdoc[col_docente_nm].dropna().unique() if str(x).strip()), "")
@@ -638,7 +693,8 @@ def html_programa_detalle_global(programa, df_prog, col_docente_nm, col_docente_
             fase1 = r.get("CALIFICACION", 0)
             fase2 = r.get("CALIFICACION 2", 0)
             final = r.get("CALIFICACION FINAL", 0)
-            desc, short, fg, bg = final_qual(final)
+            nota_fase = r.get(col_puntaje_final, final)
+            desc, short, fg, bg = final_qual(nota_fase)
             puntajes_html = (
                 f"Alistamiento: {to_int_or_str(fase1)}<br>"
                 f"Ejecución: {to_int_or_str(fase2)}<br>"
@@ -686,7 +742,7 @@ def html_programa_detalle_global(programa, df_prog, col_docente_nm, col_docente_
 <div style="font-family:Segoe UI, Arial, sans-serif;max-width:860px;margin:0 auto;">
   <div style="background:{BRAND['primary']};color:#fff;padding:16px 20px;border-radius:10px 10px 0 0;border:1px solid #002b55;">
     <div style="font-size:20px;font-weight:700;">Detalle final por NRC – Programa <span style="color:#FFD000;">{programa}</span></div>
-    <div style="font-size:12px;font-weight:400;margin-top:6px;color:#e6eaf2;">Momento 2 – Informe final (Alistamiento + Ejecución).</div>
+    <div style="font-size:12px;font-weight:400;margin-top:6px;color:#e6eaf2;">Momento 2 – Informe de {fase_label(fase)}.</div>
   </div>
   <div style="border:1px solid {BRAND['table_border']};border-top:none;border-radius:0 0 10px 10px;padding:20px;background:{BRAND['panel_bg']};">
     {''.join(bloques)}
@@ -696,13 +752,13 @@ def html_programa_detalle_global(programa, df_prog, col_docente_nm, col_docente_
     return wrapper
 
 
-def html_programa_detalle_mail(programa, df_prog, col_docente_nm, col_docente_id):
-    cuerpo = html_programa_detalle_global(programa, df_prog, col_docente_nm, col_docente_id)
-    title = f"Informe final – Programa <span style='color:#FFD000;'>{programa}</span>"
+def html_programa_detalle_mail(programa, df_prog, col_docente_nm, col_docente_id, col_puntaje_final, fase):
+    cuerpo = html_programa_detalle_global(programa, df_prog, col_docente_nm, col_docente_id, col_puntaje_final, fase)
+    title = f"Informe de {fase_label(fase)} – Programa <span style='color:#FFD000;'>{programa}</span>"
     mensaje = ("<p style='margin:0 0 12px 0;'>A continuación se presenta el "
-               "<strong>detalle final por NRC</strong> del programa, con las notas de "
+               "<strong>detalle por NRC</strong> del programa, con las notas de "
                "alistamiento, ejecución y su calificación final.</p>")
-    return email_shell(title, mensaje + f"<div>{cuerpo}</div>")
+    return email_shell(title, mensaje + f"<div>{cuerpo}</div>", fase)
 
 
 # ---------- GLOBAL ----------
@@ -768,7 +824,7 @@ def build_overall_totals(df, col_puntaje_final):
         "pct_insat": pct(insat),
     }
 
-def html_global_program_bars(df, col_prog, col_puntaje_final):
+def html_global_program_bars(df, col_prog, col_puntaje_final, fase):
     """
     Bloque de barras horizontales apiladas (100%) por programa académico.
     Cada barra muestra la distribución de aulas en:
@@ -824,18 +880,18 @@ def html_global_program_bars(df, col_prog, col_puntaje_final):
     return f"""
     <div style="margin:8px 0 16px 0;">
       <div style="font-size:15px;font-weight:600;color:{BRAND['primary_dark']};margin-bottom:8px;">
-        Desempeño por programa académico
+        Desempeño por programa académico – {fase_label(fase)}
       </div>
       <div>
         {''.join(filas)}
       </div>
       <div style="font-size:11px;color:#666;margin-top:6px;">
-        Cada barra representa el 100% de las aulas del programa, segmentadas por nivel de desempeño final
-        (excelente, bueno, aceptable e insatisfactorio) según la calificación final.
+        Cada barra representa el 100% de las aulas del programa, segmentadas por nivel de desempeño
+        (excelente, bueno, aceptable e insatisfactorio) según la calificación de la fase seleccionada.
       </div>
     </div>"""
 
-def html_global_summary_table(df, col_prog, col_puntaje_final):
+def html_global_summary_table(df, col_prog, col_puntaje_final, fase):
     stats = build_program_stats(df, col_prog, col_puntaje_final)
     tot = build_overall_totals(df, col_puntaje_final)
 
@@ -847,7 +903,7 @@ def html_global_summary_table(df, col_prog, col_puntaje_final):
         <div style="font-size:28px;font-weight:800;color:{BRAND['primary']};line-height:1.2;">{tot['aulas_total']}</div>
       </div>
       <div style="flex:1 1 180px;background:#ffffff;border:1px solid {BRAND['table_border']};border-radius:12px;padding:14px 16px;box-shadow:0 2px 6px rgba(0,0,0,.05);">
-        <div style="font-size:12px;color:#667;letter-spacing:.4px;text-transform:uppercase;">Promedio final</div>
+        <div style="font-size:12px;color:#667;letter-spacing:.4px;text-transform:uppercase;">Promedio {fase_label(fase).lower()}</div>
         <div style="font-size:28px;font-weight:800;color:{BRAND['primary']};line-height:1.2;">{tot['promedio']}</div>
         <div style="font-size:12px;color:#667;">(0–100)</div>
       </div>
@@ -874,7 +930,7 @@ def html_global_summary_table(df, col_prog, col_puntaje_final):
     </div>"""
 
     # 🔹 NUEVA: gráfica horizontal por programas, debajo de los KPI
-    bars_block = html_global_program_bars(df, col_prog, col_puntaje_final)
+    bars_block = html_global_program_bars(df, col_prog, col_puntaje_final, fase)
 
     filas = []
     for i, row in enumerate(stats):
@@ -917,7 +973,7 @@ def html_global_summary_table(df, col_prog, col_puntaje_final):
       <tbody>{''.join(filas)}</tbody>
     </table>
     <div style="font-size:12px;color:#666;margin-top:8px;">
-      La clasificación se basa en la calificación final (0–100): excelente (91–100), bueno (80–90),
+      La clasificación se basa en la calificación de la fase seleccionada (0–100): excelente (91–100), bueno (80–90),
       aceptable (70–79) e insatisfactorio (0–69).
     </div>
     """
@@ -926,7 +982,7 @@ def html_global_summary_table(df, col_prog, col_puntaje_final):
     <div style="background:{BRAND['primary']};color:#fff;padding:16px 20px;border-radius:10px 10px 0 0;border:1px solid #002b55;">
       <div style="font-size:20px;font-weight:700;">Informe global – Programas académicos (Rectoría Centro Sur)</div>
       <div style="font-size:12px;font-weight:400;margin-top:6px;color:#e6eaf2;">
-        Momento 2 – Informe final (Fase de Alistamiento 50% + Fase de Ejecución 50%).
+        Momento 2 – Informe de {fase_label(fase)}.
       </div>
     </div>"""
 
@@ -935,7 +991,7 @@ def html_global_summary_table(df, col_prog, col_puntaje_final):
       {kpi_cards}
       {bars_block}
       <div style="font-size:15px;color:{BRAND['primary_dark']};font-weight:600;margin:8px 0 12px 0;">
-        Resumen consolidado por programa (desempeño final)
+        Resumen consolidado por programa (desempeño {fase_label(fase).lower()})
       </div>
       {tabla}
     </div>"""
@@ -943,18 +999,18 @@ def html_global_summary_table(df, col_prog, col_puntaje_final):
     return f"<div style='max-width:980px;margin:0 auto 24px auto;font-family:Segoe UI,Arial,sans-serif;'>{header_card}{cuerpo_card}</div>"
 
 
-def html_global_programas_resumen(df, col_prog, col_docente_nm, col_docente_id, col_puntaje_final):
-    bloque_top = html_global_summary_table(df, col_prog, col_puntaje_final)
+def html_global_programas_resumen(df, col_prog, col_docente_nm, col_docente_id, col_puntaje_final, fase):
+    bloque_top = html_global_summary_table(df, col_prog, col_puntaje_final, fase)
     bloques_programas = []
     for programa, gprog in df.groupby(col_prog):
-        bloque = html_programa_resumen(programa, gprog, col_docente_nm, col_docente_id)
+        bloque = html_programa_resumen(programa, gprog, col_docente_nm, col_docente_id, col_puntaje_final, fase)
         bloques_programas.append(f"<div style='margin:18px auto;max-width:900px;'>{bloque}</div>")
     pagina = f"""
 <div style="font-family:Segoe UI, Arial, sans-serif;">
   {bloque_top}
   <div style="max-width:980px;margin:0 auto;border:1px solid {BRAND['table_border']};border-radius:10px;background:#fff;box-shadow:0 4px 12px rgba(0,0,0,.05);padding:20px;">
     <div style="font-size:16px;font-weight:700;color:{BRAND['primary_dark']};margin-bottom:12px;">
-      Detalle por programa (docentes, nº de aulas y promedio final)
+      Detalle por programa (docentes, nº de aulas y promedio {fase_label(fase).lower()})
     </div>
     {''.join(bloques_programas)}
     {footer_block()}
@@ -993,11 +1049,83 @@ def outlook_send(to_email, subject, html_body, attachments=None, cc=None, bcc=No
     mail.Send()
 
 
+def menu_interactivo(parser):
+    print("=== Generación de reportes de aulas – Momento 2 ===")
+    base_args = parser.parse_args([])
+
+    # Fase
+    fases_map = {"1": FASE_ALISTAMIENTO, "2": FASE_EJECUCION, "3": FASE_TOTAL}
+    fase_sel = None
+    while fase_sel is None:
+        print("Seleccione la fase del informe:")
+        print("1) Alistamiento")
+        print("2) Ejecución")
+        print("3) Total (Alistamiento + Ejecución)")
+        op = input("Opción: ").strip()
+        if op in fases_map:
+            fase_sel = fases_map[op]
+        else:
+            print("❌ Opción de fase no válida. Intente nuevamente.\n")
+
+    # Reportes
+    report_map = {"1": "global", "2": "programas", "3": "docentes"}
+    seleccion = []
+    while not seleccion:
+        print("¿Qué reportes desea generar?")
+        print("1) Global")
+        print("2) Programas")
+        print("3) Docentes")
+        raw = input("Escriba los números separados por coma (ej: 1,3): ").strip()
+        for part in raw.split(','):
+            key = part.strip()
+            if key in report_map and report_map[key] not in seleccion:
+                seleccion.append(report_map[key])
+        if not seleccion:
+            print("❌ Debe seleccionar al menos un reporte.\n")
+
+    # Destino / envío
+    destino = None
+    while destino is None:
+        print("Destino de los reportes:")
+        print("1) Solo generar archivos (no enviar correos)")
+        print("2) Enviar solo a mi correo (jaime.lozano.a@uniminuto.edu)")
+        print("3) Enviar a los correos finales (coordinadores/docentes)")
+        op = input("Opción: ").strip()
+        if op in {"1", "2", "3"}:
+            destino = op
+        else:
+            print("❌ Opción de destino no válida.\n")
+
+    excel_in = input(f"Archivo de Excel [{base_args.excel}]: ").strip()
+    if excel_in:
+        base_args.excel = excel_in
+
+    base_args.fase = fase_sel
+    base_args.send = ",".join(seleccion)
+    base_args.make_global = base_args.make_global or ("global" in seleccion)
+    base_args.send_global = base_args.send_global or ("global" in seleccion and destino in {"2", "3"})
+
+    if destino == "1":
+        base_args.mode = "preview"
+        base_args.dry_run = True
+        base_args.force_to = None
+    elif destino == "2":
+        base_args.mode = "outlook"
+        base_args.dry_run = False
+        base_args.force_to = "jaime.lozano.a@uniminuto.edu"
+    else:
+        base_args.mode = "outlook"
+        base_args.dry_run = False
+        base_args.force_to = None
+
+    return base_args
+
+
 # ---------- MAIN ----------
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--excel", required=True)
+    parser.add_argument("--excel", default="ENVIO INFORMES MOMENTO 2.xlsx")
     parser.add_argument("--mode", choices=["preview", "outlook"], default="preview")
     parser.add_argument("--out", default="./salida")
     parser.add_argument("--send", default="docentes,programas")
@@ -1018,7 +1146,17 @@ def main():
     parser.add_argument("--cc")
     parser.add_argument("--bcc")
     parser.add_argument("--reply-to")
-    args = parser.parse_args()
+    parser.add_argument(
+        "--fase",
+        choices=[FASE_ALISTAMIENTO, FASE_EJECUCION, FASE_TOTAL],
+        default=FASE_TOTAL,
+        help="Fase del informe: alistamiento, ejecucion o total (Momento 2)."
+    )
+
+    if len(sys.argv) == 1:
+        args = menu_interactivo(parser)
+    else:
+        args = parser.parse_args()
 
     outdir = Path(args.out)
     (outdir / "docentes").mkdir(parents=True, exist_ok=True)
@@ -1047,12 +1185,17 @@ def main():
     col_docente_id = "ID DOCENTE"
     col_correo = "CORREO"
     col_prog = "PROGRAMA"
-    col_puntaje_final = "CALIFICACION FINAL"
+    df["PUNTAJE_FASE"] = df.apply(lambda r: get_nota_fase(r, args.fase), axis=1).astype(float)
+    col_puntaje_final = "PUNTAJE_FASE"
     col_nrc = "NRC"
     col_observ = "OBSERVACION"
     col_asig = "ASIGNATURA" if "ASIGNATURA" in df.columns else None
 
     send_modes = [s.strip().lower() for s in args.send.split(",") if s.strip()]
+    if "global" in send_modes:
+        args.make_global = True
+        if args.mode == "outlook":
+            args.send_global = True
 
     only_ids = set([s.strip() for s in str(args.only or "").split(",") if s.strip()])
     if args.only_docentes:
@@ -1148,17 +1291,18 @@ def main():
                     "CALIFICACION": r.get("CALIFICACION", 0),
                     "CALIFICACION 2": r.get("CALIFICACION 2", 0),
                     "CALIFICACION FINAL": r.get("CALIFICACION FINAL", 0),
+                    "PUNTAJE_FASE": r.get(col_puntaje_final, get_nota_fase(r, args.fase)),
                     "OBSERVACION": r.get(col_observ, ""),
                 })
 
-            html = html_docente(nombre, docente_id_val, rows)
+            html = html_docente(nombre, docente_id_val, rows, args.fase)
             fname = (nombre or str(docente_id_val) or "docente").replace(" ", "_").replace("/", "_")
-            (outdir / "docentes" / f"{FECHA_ETQ}_docente_{fname}.html").write_text(html, encoding="utf-8")
+            (outdir / "docentes" / f"docente_{fname}_{args.fase}_{FECHA_ETQ}.html").write_text(html, encoding="utf-8")
 
             if args.mode == "outlook":
                 to_email = args.force_to if args.force_to else correo
                 if to_email and is_email(to_email):
-                    subject = SUBJECT_DOCENTE.format(DOCENTE_LBL=(nombre or f"ID {to_int_or_str(docente_id_val)}"))
+                    subject = subject_docente(args.fase, (nombre or f"ID {to_int_or_str(docente_id_val)}"))
                     if args.force_to:
                         subject = f"[PRUEBA] {subject}"
                     attachments = docente_extra_attachments.copy()
@@ -1187,20 +1331,20 @@ def main():
             if only_programs and (str(programa).strip() not in only_programs):
                 continue
 
-            resumen_html = html_programa_resumen(programa, gprog, col_docente_nm, col_docente_id)
+            resumen_html = html_programa_resumen(programa, gprog, col_docente_nm, col_docente_id, col_puntaje_final, args.fase)
             fname_prog = str(programa).replace(" ", "_").replace("/", "_")
-            (outdir / "programas" / f"{FECHA_ETQ}_{fname_prog}__resumen.html").write_text(resumen_html, encoding="utf-8")
+            (outdir / "programas" / f"programa_{fname_prog}_{args.fase}_{FECHA_ETQ}__resumen.html").write_text(resumen_html, encoding="utf-8")
 
-            mail_html = html_programa_detalle_mail(programa, gprog, col_docente_nm, col_docente_id)
-            detalle_html_puro = html_programa_detalle_global(programa, gprog, col_docente_nm, col_docente_id)
-            detalle_html_path = (outdir / "programas" / f"{FECHA_ETQ}_{fname_prog}__detalle.html").resolve()
+            mail_html = html_programa_detalle_mail(programa, gprog, col_docente_nm, col_docente_id, col_puntaje_final, args.fase)
+            detalle_html_puro = html_programa_detalle_global(programa, gprog, col_docente_nm, col_docente_id, col_puntaje_final, args.fase)
+            detalle_html_path = (outdir / "programas" / f"programa_{fname_prog}_{args.fase}_{FECHA_ETQ}__detalle.html").resolve()
             detalle_html_path.write_text(detalle_html_puro, encoding="utf-8")
 
             attachments = []
             if PDFKIT_AVAILABLE and PDFKIT_CONFIG:
                 try:
                     detalle_pdf_path = (outdir / "programas" /
-                                        f"RCS_{FECHA_ETQ}_{fname_prog}__detalle.pdf").resolve()
+                                        f"programa_{fname_prog}_{args.fase}_{FECHA_ETQ}__detalle.pdf").resolve()
                     pdfkit.from_string(
                         wrap_for_pdf(detalle_html_puro),
                         str(detalle_pdf_path),
@@ -1229,7 +1373,7 @@ def main():
                     to_email = None
 
                 if to_email:
-                    subject = SUBJECT_PROGRAMA.format(PROGRAMA=programa)
+                    subject = subject_programa(args.fase, programa)
                     if args.force_to:
                         subject = f"[PRUEBA] {subject}"
                     try:
@@ -1250,15 +1394,15 @@ def main():
 
     # ----- GLOBAL -----
     if args.make_global:
-        global_html = html_global_programas_resumen(df, col_prog, col_docente_nm, col_docente_id, col_puntaje_final)
-        global_html_path = (outdir / "global" / "global_programas__resumen.html")
+        global_html = html_global_programas_resumen(df, col_prog, col_docente_nm, col_docente_id, col_puntaje_final, args.fase)
+        global_html_path = (outdir / "global" / f"global_momento2_{args.fase}_{FECHA_ETQ}.html")
         global_html_path.write_text(global_html, encoding="utf-8")
 
         global_pdf_path = None
         if PDFKIT_AVAILABLE and PDFKIT_CONFIG:
             try:
                 global_pdf_path = (outdir / "global" /
-                                   f"RCS_{FECHA_ETQ}_global_programas__resumen.pdf").resolve()
+                                   f"global_momento2_{args.fase}_{FECHA_ETQ}.pdf").resolve()
                 pdfkit.from_string(
                     wrap_for_pdf(global_html),
                     str(global_pdf_path),
@@ -1268,10 +1412,10 @@ def main():
                 print(f"📄 Global PDF: {global_pdf_path}")
             except Exception as e:
                 print(f"⚠️ No se pudo generar PDF global: {e}")
-
+        
         if args.send_global and args.mode == "outlook":
             inner = global_html_path.read_text(encoding="utf-8")
-            mail_body = email_shell("Informe global final – <span style='color:#FFD000;'>Campus Virtual RCS</span>", inner)
+            mail_body = email_shell("Informe global final – <span style='color:#FFD000;'>Campus Virtual RCS</span>", inner, args.fase)
             recipients = [args.force_to] if args.force_to else parse_emails(args.global_to)
             if not recipients:
                 print("⚠️ No hay destinatarios para el global. Usa --global-to o --force-to.")
@@ -1284,12 +1428,12 @@ def main():
                 try:
                     to_field = "; ".join(recipients)
                     outlook_send(
-                        to_field, SUBJECT_GLOBAL, mail_body, attachments=attachments,
+                        to_field, subject_global(args.fase), mail_body, attachments=attachments,
                         cc=None if not args.cc else "; ".join(parse_emails(args.cc)),
                         bcc=None if not args.bcc else "; ".join(parse_emails(args.bcc)),
                         reply_to=args.reply_to, dry_run=args.dry_run
                     )
-                    log_envio(outdir / "envios.csv", "global", to_field, SUBJECT_GLOBAL, attachments)
+                    log_envio(outdir / "envios.csv", "global", to_field, subject_global(args.fase), attachments)
                     print(f"📨 Global enviado a: {to_field} (adjuntos: {len(attachments)})")
                 except Exception as e:
                     print(f"⚠️ Error enviando Global: {e}")
