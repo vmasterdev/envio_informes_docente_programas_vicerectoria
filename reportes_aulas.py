@@ -344,33 +344,34 @@ def html_docente(nombre, docente_id, rows):
         <div style="font-size:11px;color:#667;">(0–100)</div>
       </div>
       <div style="flex:1 1 160px;background:#dcfce7;border:1px solid #cfead7;border-radius:12px;padding:10px 12px;box-shadow:0 2px 6px rgba(0,0,0,.04);">
-        <div style="font-size:11px;color:#14532d;letter-spacing:.4px;text-transform:uppercase;">Excelente / Bueno</div>
-        <div style="font-size:20px;font-weight:800;color:#14532d;line-height:1.2;">{exc + bueno}</div>
-        <div style="font-size:11px;color:#14532d;">{round(pct_exc + pct_bueno,1)}%</div>
+        <div style="font-size:11px;color:#14532d;letter-spacing:.4px;text-transform:uppercase;">Excelente</div>
+        <div style="font-size:20px;font-weight:800;color:#14532d;line-height:1.2;">{exc}</div>
+        <div style="font-size:11px;color:#14532d;">{pct_exc}%</div>
+      </div>
+      <div style="flex:1 1 160px;background:#dbeafe;border:1px solid #c2d4fb;border-radius:12px;padding:10px 12px;box-shadow:0 2px 6px rgba(0,0,0,.04);">
+        <div style="font-size:11px;color:#1d4ed8;letter-spacing:.4px;text-transform:uppercase;">Bueno</div>
+        <div style="font-size:20px;font-weight:800;color:#1d4ed8;line-height:1.2;">{bueno}</div>
+        <div style="font-size:11px;color:#1d4ed8;">{pct_bueno}%</div>
+      </div>
+      <div style="flex:1 1 160px;background:#ffedd5;border:1px solid #f5d0a7;border-radius:12px;padding:10px 12px;box-shadow:0 2px 6px rgba(0,0,0,.04);">
+        <div style="font-size:11px;color:#92400e;letter-spacing:.4px;text-transform:uppercase;">Aceptable</div>
+        <div style="font-size:20px;font-weight:800;color:#92400e;line-height:1.2;">{acept}</div>
+        <div style="font-size:11px;color:#92400e;">{pct_acept}%</div>
       </div>
       <div style="flex:1 1 160px;background:#fee2e2;border:1px solid #f3c9cf;border-radius:12px;padding:10px 12px;box-shadow:0 2px 6px rgba(0,0,0,.04);">
-        <div style="font-size:11px;color:#7f1d1d;letter-spacing:.4px;text-transform:uppercase;">Acept./Insat.</div>
-        <div style="font-size:20px;font-weight:800;color:#7f1d1d;line-height:1.2;">{acept + insat}</div>
-        <div style="font-size:11px;color:#7f1d1d;">{round(pct_acept + pct_insat,1)}%</div>
+        <div style="font-size:11px;color:#7f1d1d;letter-spacing:.4px;text-transform:uppercase;">Insatisfactorio</div>
+        <div style="font-size:20px;font-weight:800;color:#7f1d1d;line-height:1.2;">{insat}</div>
+        <div style="font-size:11px;color:#7f1d1d;">{pct_insat}%</div>
       </div>
     </div>"""
 
-    # Barra horizontal apilada
-    if total_aulas > 0:
-        w_exc = exc * 100.0 / total_aulas
-        w_bueno = bueno * 100.0 / total_aulas
-        w_acept = acept * 100.0 / total_aulas
-        w_insat = max(0.0, 100.0 - (w_exc + w_bueno + w_acept))
-    else:
-        w_exc = w_bueno = w_acept = w_insat = 0.0
-
+    # Barra horizontal apilada (usa los conteos para mantener los colores en PDF/HTML)
     bar_html = f"""
-    <div style="position:relative;width:100%;height:18px;border-radius:9px;overflow:hidden;border:1px solid {BRAND['table_border']};background:#f9fafb;margin-top:4px;">
-      <div style="float:left;width:{w_exc:.4f}%;height:100%;background:#16a34a;"></div>
-      <div style="float:left;width:{w_bueno:.4f}%;height:100%;background:#2563eb;"></div>
-      <div style="float:left;width:{w_acept:.4f}%;height:100%;background:#ea580c;"></div>
-      <div style="float:left;width:{w_insat:.4f}%;height:100%;background:#b91c1c;"></div>
-      <div style="clear:both;"></div>
+    <div style="display:flex;width:100%;height:18px;border-radius:9px;overflow:hidden;border:1px solid {BRAND['table_border']};background:#f9fafb;margin-top:4px;">
+      <div style="flex:{exc};background:#16a34a;"></div>
+      <div style="flex:{bueno};background:#2563eb;"></div>
+      <div style="flex:{acept};background:#ea580c;"></div>
+      <div style="flex:{insat};background:#b91c1c;"></div>
     </div>
     <div style="font-size:11px;color:#555;margin-top:3px;">
       Excelente: {exc} ({pct_exc}%) ·
@@ -477,33 +478,34 @@ def html_programa_resumen(programa, df_prog, col_docente_nm, col_docente_id):
         <div style="font-size:11px;color:#667;">(0–100)</div>
       </div>
       <div style="flex:1 1 180px;background:#dcfce7;border:1px solid #cfead7;border-radius:12px;padding:10px 12px;box-shadow:0 2px 6px rgba(0,0,0,.04);">
-        <div style="font-size:11px;color:#14532d;letter-spacing:.4px;text-transform:uppercase;">Excelente / Bueno</div>
-        <div style="font-size:20px;font-weight:800;color:#14532d;line-height:1.2;">{exc + bueno}</div>
-        <div style="font-size:11px;color:#14532d;">{round(pct_exc + pct_bueno,1)}%</div>
+        <div style="font-size:11px;color:#14532d;letter-spacing:.4px;text-transform:uppercase;">Excelente</div>
+        <div style="font-size:20px;font-weight:800;color:#14532d;line-height:1.2;">{exc}</div>
+        <div style="font-size:11px;color:#14532d;">{pct_exc}%</div>
+      </div>
+      <div style="flex:1 1 180px;background:#dbeafe;border:1px solid #c2d4fb;border-radius:12px;padding:10px 12px;box-shadow:0 2px 6px rgba(0,0,0,.04);">
+        <div style="font-size:11px;color:#1d4ed8;letter-spacing:.4px;text-transform:uppercase;">Bueno</div>
+        <div style="font-size:20px;font-weight:800;color:#1d4ed8;line-height:1.2;">{bueno}</div>
+        <div style="font-size:11px;color:#1d4ed8;">{pct_bueno}%</div>
+      </div>
+      <div style="flex:1 1 180px;background:#ffedd5;border:1px solid #f5d0a7;border-radius:12px;padding:10px 12px;box-shadow:0 2px 6px rgba(0,0,0,.04);">
+        <div style="font-size:11px;color:#92400e;letter-spacing:.4px;text-transform:uppercase;">Aceptable</div>
+        <div style="font-size:20px;font-weight:800;color:#92400e;line-height:1.2;">{acept}</div>
+        <div style="font-size:11px;color:#92400e;">{pct_acept}%</div>
       </div>
       <div style="flex:1 1 180px;background:#fee2e2;border:1px solid #f3c9cf;border-radius:12px;padding:10px 12px;box-shadow:0 2px 6px rgba(0,0,0,.04);">
-        <div style="font-size:11px;color:#7f1d1d;letter-spacing:.4px;text-transform:uppercase;">Acept./Insat.</div>
-        <div style="font-size:20px;font-weight:800;color:#7f1d1d;line-height:1.2;">{acept + insat}</div>
-        <div style="font-size:11px;color:#7f1d1d;">{round(pct_acept + pct_insat,1)}%</div>
+        <div style="font-size:11px;color:#7f1d1d;letter-spacing:.4px;text-transform:uppercase;">Insatisfactorio</div>
+        <div style="font-size:20px;font-weight:800;color:#7f1d1d;line-height:1.2;">{insat}</div>
+        <div style="font-size:11px;color:#7f1d1d;">{pct_insat}%</div>
       </div>
     </div>"""
 
     # ---- Barra horizontal apilada (solo este programa) ----
-    if total_aulas > 0:
-        w_exc = exc * 100.0 / total_aulas
-        w_bueno = bueno * 100.0 / total_aulas
-        w_acept = acept * 100.0 / total_aulas
-        w_insat = max(0.0, 100.0 - (w_exc + w_bueno + w_acept))
-    else:
-        w_exc = w_bueno = w_acept = w_insat = 0.0
-
     bar_html = f"""
-    <div style="position:relative;width:100%;height:18px;border-radius:9px;overflow:hidden;border:1px solid {BRAND['table_border']};background:#f9fafb;margin-top:4px;">
-      <div style="float:left;width:{w_exc:.4f}%;height:100%;background:#16a34a;"></div>
-      <div style="float:left;width:{w_bueno:.4f}%;height:100%;background:#2563eb;"></div>
-      <div style="float:left;width:{w_acept:.4f}%;height:100%;background:#ea580c;"></div>
-      <div style="float:left;width:{w_insat:.4f}%;height:100%;background:#b91c1c;"></div>
-      <div style="clear:both;"></div>
+    <div style="display:flex;width:100%;height:18px;border-radius:9px;overflow:hidden;border:1px solid {BRAND['table_border']};background:#f9fafb;margin-top:4px;">
+      <div style="flex:{exc};background:#16a34a;"></div>
+      <div style="flex:{bueno};background:#2563eb;"></div>
+      <div style="flex:{acept};background:#ea580c;"></div>
+      <div style="flex:{insat};background:#b91c1c;"></div>
     </div>
     <div style="font-size:11px;color:#555;margin-top:3px;">
       Excelente: {exc} ({pct_exc}%) ·
@@ -834,14 +836,24 @@ def html_global_summary_table(df, col_prog, col_puntaje_final):
         <div style="font-size:12px;color:#667;">(0–100)</div>
       </div>
       <div style="flex:1 1 180px;background:#dcfce7;border:1px solid #cfead7;border-radius:12px;padding:14px 16px;box-shadow:0 2px 6px rgba(0,0,0,.05);">
-        <div style="font-size:12px;color:#14532d;letter-spacing:.4px;text-transform:uppercase;">Excelente / Bueno</div>
-        <div style="font-size:28px;font-weight:800;color:#14532d;line-height:1.2;">{tot['exc'] + tot['bueno']}</div>
-        <div style="font-size:12px;color:#14532d;">{round(tot['pct_exc'] + tot['pct_bueno'],1)}%</div>
+        <div style="font-size:12px;color:#14532d;letter-spacing:.4px;text-transform:uppercase;">Excelente</div>
+        <div style="font-size:28px;font-weight:800;color:#14532d;line-height:1.2;">{tot['exc']}</div>
+        <div style="font-size:12px;color:#14532d;">{tot['pct_exc']}%</div>
+      </div>
+      <div style="flex:1 1 180px;background:#dbeafe;border:1px solid #c2d4fb;border-radius:12px;padding:14px 16px;box-shadow:0 2px 6px rgba(0,0,0,.05);">
+        <div style="font-size:12px;color:#1d4ed8;letter-spacing:.4px;text-transform:uppercase;">Bueno</div>
+        <div style="font-size:28px;font-weight:800;color:#1d4ed8;line-height:1.2;">{tot['bueno']}</div>
+        <div style="font-size:12px;color:#1d4ed8;">{tot['pct_bueno']}%</div>
+      </div>
+      <div style="flex:1 1 180px;background:#ffedd5;border:1px solid #f5d0a7;border-radius:12px;padding:14px 16px;box-shadow:0 2px 6px rgba(0,0,0,.05);">
+        <div style="font-size:12px;color:#92400e;letter-spacing:.4px;text-transform:uppercase;">Aceptable</div>
+        <div style="font-size:28px;font-weight:800;color:#92400e;line-height:1.2;">{tot['acept']}</div>
+        <div style="font-size:12px;color:#92400e;">{tot['pct_acept']}%</div>
       </div>
       <div style="flex:1 1 180px;background:#fee2e2;border:1px solid #f3c9cf;border-radius:12px;padding:14px 16px;box-shadow:0 2px 6px rgba(0,0,0,.05);">
-        <div style="font-size:12px;color:#7f1d1d;letter-spacing:.4px;text-transform:uppercase;">Acep. / Insat.</div>
-        <div style="font-size:28px;font-weight:800;color:#7f1d1d;line-height:1.2;">{tot['acept'] + tot['insat']}</div>
-        <div style="font-size:12px;color:#7f1d1d;">{round(tot['pct_acept'] + tot['pct_insat'],1)}%</div>
+        <div style="font-size:12px;color:#7f1d1d;letter-spacing:.4px;text-transform:uppercase;">Insatisfactorio</div>
+        <div style="font-size:28px;font-weight:800;color:#7f1d1d;line-height:1.2;">{tot['insat']}</div>
+        <div style="font-size:12px;color:#7f1d1d;">{tot['pct_insat']}%</div>
       </div>
     </div>"""
 
