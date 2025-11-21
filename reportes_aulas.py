@@ -803,11 +803,11 @@ def html_global_program_bars(df, col_prog, col_puntaje_final):
             </span>
           </div>
           <div style="flex:1;display:flex;flex-direction:column;gap:4px;">
-            <div style="display:flex;height:18px;border-radius:999px;overflow:hidden;border:1px solid {BRAND['table_border']};background:#f9fafb;">
-              <div style="flex:{exc};background:#16a34a;font-size:0;"></div>
-              <div style="flex:{bueno};background:#2563eb;font-size:0;"></div>
-              <div style="flex:{acept};background:#ea580c;font-size:0;"></div>
-              <div style="flex:{insat};background:#b91c1c;font-size:0;"></div>
+            <div style="display:flex;display:-webkit-box;display:-ms-flexbox;height:18px;border-radius:999px;overflow:hidden;border:1px solid {BRAND['table_border']};background:#f9fafb;">
+              <div style="flex:{exc} 1 0%;-webkit-box-flex:{exc};-ms-flex:{exc} 1 0%;width:{pct_exc}%;background:#16a34a;font-size:0;"></div>
+              <div style="flex:{bueno} 1 0%;-webkit-box-flex:{bueno};-ms-flex:{bueno} 1 0%;width:{pct_bueno}%;background:#2563eb;font-size:0;"></div>
+              <div style="flex:{acept} 1 0%;-webkit-box-flex:{acept};-ms-flex:{acept} 1 0%;width:{pct_acept}%;background:#ea580c;font-size:0;"></div>
+              <div style="flex:{insat} 1 0%;-webkit-box-flex:{insat};-ms-flex:{insat} 1 0%;width:{pct_insat}%;background:#b91c1c;font-size:0;"></div>
             </div>
             <div style="font-size:11px;color:#555;">
               Excelente: {exc} ({pct_exc}%) ·
