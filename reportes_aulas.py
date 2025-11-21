@@ -54,12 +54,13 @@ def wrap_for_pdf(html_inner: str) -> str:
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
 <style>
   html,body{{-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;-webkit-print-color-adjust:exact;print-color-adjust:exact;}}
+  body{{max-width:1100px;margin:0 auto;padding:0 10px;}}
   body,table,td,th{{font-family:"Segoe UI","Noto Sans","DejaVu Sans",Arial,sans-serif;font-size:14px;color:#222;line-height:1.3;}}
   thead th,.thead-th th{{background:{BRAND["primary_dark"]}!important;color:#fff!important;}}
   table{{table-layout:fixed;border-collapse:collapse;}}
   td,th{{font-variant-numeric:tabular-nums;word-break:break-word;white-space:normal;}}
-  .badge-pill{{border-radius:999px;padding:4px 10px;font-weight:700;display:inline-block;font-size:12px;}}
-  .rev-chip{{display:inline-block;font-size:12px;border-radius:999px;padding:3px 10px;border:1px solid #d7dde9;line-height:1.2;white-space:normal;word-break:break-word;overflow-wrap:anywhere;}}
+  .badge-pill{{border-radius:999px;padding:4px 10px;font-weight:700;display:inline-flex;align-items:center;justify-content:center;font-size:12px;min-width:120px;text-align:center;line-height:1.35;}}
+  .rev-chip{{display:inline-flex;align-items:center;gap:6px;font-size:12px;border-radius:999px;padding:3px 12px;border:1px solid #d7dde9;line-height:1.3;white-space:normal;word-break:break-word;overflow-wrap:anywhere;min-width:170px;}}
   .rev-ok{{background:#e2f5e9;color:#1f6d3a;border-color:#cfead7;}}
   .rev-muted{{background:{BRAND["muted_bg"]};color:{BRAND["muted_fg"]};}}
   .rev-dot{{display:inline-block;width:8px;height:8px;border-radius:999px;margin-right:6px;background:#6c757d;vertical-align:middle;}}
@@ -208,7 +209,7 @@ def email_shell(title_html, body_html):
     return f"""<div><span class="preheader">Informe final de seguimiento – Momento 2 (Alistamiento + Ejecución).</span></div>
 <table style="background:#f2f4f8;" border="0" width="100%" cellspacing="0" cellpadding="0">
   <tr><td align="center" style="padding:28px 12px;">
-    <table width="720" style="max-width:720px;background:#ffffff;border-radius:12px;box-shadow:0 4px 12px rgba(0,0,0,.08);">
+    <table width="900" style="max-width:900px;background:#ffffff;border-radius:12px;box-shadow:0 4px 12px rgba(0,0,0,.08);">
       <tr><td style="background:{BRAND['accent']};height:8px;border-top-left-radius:12px;border-top-right-radius:12px;font-size:0;line-height:0;">&nbsp;</td></tr>
       <tr><td style="background:{BRAND['primary']};color:#fff;padding:18px 24px;border-bottom:1px solid #002b55;font-family:Segoe UI,Arial;">
         <div style="font-size:22px;font-weight:700;">{title_html}</div></td></tr>
@@ -238,13 +239,13 @@ def tabla_docente(rows):
           <td style="padding:10px;width:12%;text-align:center;">{r['NRC']}</td>
           <td style="padding:10px;width:40%;text-align:left;word-break:break-word;white-space:normal;overflow-wrap:anywhere;">{r.get('ASIGNATURA','')}</td>
           <td style="padding:10px;width:20%;text-align:left;word-break:break-word;white-space:normal;overflow-wrap:anywhere;">{r.get('PROGRAMA','')}</td>
-          <td style="padding:10px;width:14%;text-align:left;font-size:12px;line-height:1.4;">{puntajes_html}</td>
-          <td style="padding:10px;width:14%;text-align:center;">
-            <span style="display:inline-block;padding:4px 10px;border-radius:999px;background:{fg};color:#fff;font-size:12px;font-weight:600;" class="badge-pill">
+          <td style="padding:10px;width:14%;min-width:150px;text-align:left;font-size:12px;line-height:1.4;">{puntajes_html}</td>
+          <td style="padding:10px;width:14%;min-width:130px;text-align:center;">
+            <span style="display:inline-flex;padding:4px 10px;border-radius:999px;background:{fg};color:#fff;font-size:12px;font-weight:600;" class="badge-pill">
               {desc}
             </span>
           </td>
-          <td style="padding:10px;width:14%;text-align:left;white-space:normal;word-break:break-word;overflow-wrap:anywhere;line-height:1.35;">{rev}</td>
+          <td style="padding:10px;width:14%;min-width:170px;text-align:left;white-space:normal;word-break:break-word;overflow-wrap:anywhere;line-height:1.35;">{rev}</td>
         </tr>""")
 
     inner = f"""
@@ -558,8 +559,8 @@ def html_programa_resumen(programa, df_prog, col_docente_nm, col_docente_id):
             f"style='background:{fg};color:#fff;"
             f"border-radius:999px;padding:4px 10px;"
             f"font-weight:700;display:inline-block;"
-            f"font-size:12px;line-height:1.3;min-width:72px;"
-            f"text-align:center;'>"
+            f"font-size:12px;line-height:1.35;min-width:120px;"
+            f"text-align:center;display:inline-flex;align-items:center;justify-content:center;'>"
             f"{d['promedio']} – {short.title()}</span>"
         )
 
@@ -633,14 +634,14 @@ def html_programa_detalle_global(programa, df_prog, col_docente_nm, col_docente_
             filas.append(f"""
             <tr style="background:{BRAND['zebra'][0]};font-size:13px;">
               <td style="padding:10px;width:14%;text-align:center;">{r.get('NRC','')}</td>
-              <td style="padding:10px;width:50%;text-align:left;word-break:break-word;white-space:normal;overflow-wrap:anywhere;">{r.get('ASIGNATURA','')}</td>
-              <td style="padding:10px;width:18%;text-align:left;font-size:12px;line-height:1.4;">{puntajes_html}</td>
-              <td style="padding:10px;width:10%;text-align:center;">
-                <span style="display:inline-block;padding:4px 10px;border-radius:999px;background:{fg};color:#fff;font-size:12px;font-weight:600;" class="badge-pill">
+              <td style="padding:10px;width:48%;text-align:left;word-break:break-word;white-space:normal;overflow-wrap:anywhere;">{r.get('ASIGNATURA','')}</td>
+              <td style="padding:10px;width:18%;min-width:150px;text-align:left;font-size:12px;line-height:1.4;">{puntajes_html}</td>
+              <td style="padding:10px;width:12%;min-width:130px;text-align:center;">
+                <span style="display:inline-flex;padding:4px 10px;border-radius:999px;background:{fg};color:#fff;font-size:12px;font-weight:600;" class="badge-pill">
                   {short.title()}
                 </span>
               </td>
-              <td style="padding:10px;width:14%;text-align:left;white-space:normal;word-break:break-word;overflow-wrap:anywhere;line-height:1.35;">{rev}</td>
+              <td style="padding:10px;width:14%;min-width:170px;text-align:left;white-space:normal;word-break:break-word;overflow-wrap:anywhere;line-height:1.35;">{rev}</td>
             </tr>""")
 
         tabla = f"""
@@ -648,10 +649,10 @@ def html_programa_detalle_global(programa, df_prog, col_docente_nm, col_docente_
           <thead class="thead-th">
             <tr style="background:{BRAND['primary_dark']};color:#fff;">
               <th style="padding:10px;text-align:center;width:14%;color:#fff!important;">NRC</th>
-              <th style="padding:10px;text-align:left;width:50%;color:#fff!important;">Asignatura</th>
+              <th style="padding:10px;text-align:left;width:48%;color:#fff!important;">Asignatura</th>
               <th style="padding:10px;text-align:left;width:18%;color:#fff!important;">Puntajes (Fase 1 y 2)</th>
-              <th style="padding:10px;text-align:center;width:10%;color:#fff!important;">Desempeño</th>
-              <th style="padding:10px;text-align:center;width:14%;color:#fff!important;">Revisión</th>
+              <th style="padding:10px;text-align:center;width:12%;min-width:130px;color:#fff!important;">Desempeño</th>
+              <th style="padding:10px;text-align:center;width:14%;min-width:170px;color:#fff!important;">Revisión</th>
             </tr>
           </thead>
           <tbody>{''.join(filas)}</tbody>
@@ -667,7 +668,7 @@ def html_programa_detalle_global(programa, df_prog, col_docente_nm, col_docente_
         bloques.append(bloque)
 
     wrapper = f"""
-<div style="font-family:Segoe UI, Arial, sans-serif;max-width:860px;margin:0 auto;">
+<div style="font-family:Segoe UI, Arial, sans-serif;max-width:1040px;margin:0 auto;">
   <div style="background:{BRAND['primary']};color:#fff;padding:16px 20px;border-radius:10px 10px 0 0;border:1px solid #002b55;">
     <div style="font-size:20px;font-weight:700;">Detalle final por NRC – Programa <span style="color:#FFD000;">{programa}</span></div>
     <div style="font-size:12px;font-weight:400;margin-top:6px;color:#e6eaf2;">Momento 2 – Informe final (Alistamiento + Ejecución).</div>
@@ -924,7 +925,7 @@ def html_global_summary_table(df, col_prog, col_puntaje_final):
       {tabla}
     </div>"""
 
-    return f"<div style='max-width:980px;margin:0 auto 24px auto;font-family:Segoe UI,Arial,sans-serif;'>{header_card}{cuerpo_card}</div>"
+    return f"<div style='max-width:1100px;margin:0 auto 24px auto;font-family:Segoe UI,Arial,sans-serif;'>{header_card}{cuerpo_card}</div>"
 
 
 def html_global_programas_resumen(df, col_prog, col_docente_nm, col_docente_id, col_puntaje_final):
@@ -932,11 +933,11 @@ def html_global_programas_resumen(df, col_prog, col_docente_nm, col_docente_id, 
     bloques_programas = []
     for programa, gprog in df.groupby(col_prog):
         bloque = html_programa_resumen(programa, gprog, col_docente_nm, col_docente_id)
-        bloques_programas.append(f"<div style='margin:18px auto;max-width:900px;'>{bloque}</div>")
+        bloques_programas.append(f"<div style='margin:18px auto;max-width:1040px;'>{bloque}</div>")
     pagina = f"""
 <div style="font-family:Segoe UI, Arial, sans-serif;">
   {bloque_top}
-  <div style="max-width:980px;margin:0 auto;border:1px solid {BRAND['table_border']};border-radius:10px;background:#fff;box-shadow:0 4px 12px rgba(0,0,0,.05);padding:20px;">
+  <div style="max-width:1100px;margin:0 auto;border:1px solid {BRAND['table_border']};border-radius:10px;background:#fff;box-shadow:0 4px 12px rgba(0,0,0,.05);padding:20px;">
     <div style="font-size:16px;font-weight:700;color:{BRAND['primary_dark']};margin-bottom:12px;">
       Detalle por programa (docentes, nº de aulas y promedio final)
     </div>
