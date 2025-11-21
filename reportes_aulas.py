@@ -365,12 +365,12 @@ def html_docente(nombre, docente_id, rows):
         w_exc = w_bueno = w_acept = w_insat = 0.0
 
     bar_html = f"""
-    <div style="position:relative;width:100%;height:18px;border-radius:9px;overflow:hidden;border:1px solid {BRAND['table_border']};background:#f9fafb;margin-top:4px;">
-      <div style="float:left;width:{w_exc:.4f}%;height:100%;background:#16a34a;"></div>
-      <div style="float:left;width:{w_bueno:.4f}%;height:100%;background:#2563eb;"></div>
-      <div style="float:left;width:{w_acept:.4f}%;height:100%;background:#ea580c;"></div>
-      <div style="float:left;width:{w_insat:.4f}%;height:100%;background:#b91c1c;"></div>
-      <div style="clear:both;"></div>
+    <div style="position:relative;width:100%;height:20px;border-radius:12px;overflow:hidden;
+            border:1px solid #d0d7e2;background:#f9fafb;">
+      <div style="display:inline-block;width:{w_exc:.4f}%;height:20px;background:#16a34a;"></div>
+      <div style="display:inline-block;width:{w_bueno:.4f}%;height:20px;background:#2563eb;"></div>
+      <div style="display:inline-block;width:{w_acept:.4f}%;height:20px;background:#ea580c;"></div>
+      <div style="display:inline-block;width:{w_insat:.4f}%;height:20px;background:#b91c1c;"></div>
     </div>
     <div style="font-size:11px;color:#555;margin-top:3px;">
       Excelente: {exc} ({pct_exc}%) ·
