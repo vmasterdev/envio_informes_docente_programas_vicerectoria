@@ -803,11 +803,11 @@ def html_global_program_bars(df, col_prog, col_puntaje_final):
             </span>
           </div>
           <div style="flex:1;display:flex;flex-direction:column;gap:4px;">
-            <div style="display:flex;height:18px;border-radius:999px;overflow:hidden;border:1px solid {BRAND['table_border']};background:#f9fafb;">
-              <div style="flex:{exc};background:#16a34a;font-size:0;"></div>
-              <div style="flex:{bueno};background:#2563eb;font-size:0;"></div>
-              <div style="flex:{acept};background:#ea580c;font-size:0;"></div>
-              <div style="flex:{insat};background:#b91c1c;font-size:0;"></div>
+            <div style="width:100%;height:18px;border-radius:999px;overflow:hidden;border:1px solid {BRAND['table_border']};background:#f9fafb;white-space:nowrap;font-size:0;">
+              <span style="display:inline-block;width:{pct_exc:.4f}%;height:18px;background:#16a34a;"></span>
+              <span style="display:inline-block;width:{pct_bueno:.4f}%;height:18px;background:#2563eb;"></span>
+              <span style="display:inline-block;width:{pct_acept:.4f}%;height:18px;background:#ea580c;"></span>
+              <span style="display:inline-block;width:{pct_insat:.4f}%;height:18px;background:#b91c1c;"></span>
             </div>
             <div style="font-size:11px;color:#555;">
               Excelente: {exc} ({pct_exc}%) ·
